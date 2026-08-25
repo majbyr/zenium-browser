@@ -1,0 +1,191 @@
+diff --git a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.css b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.css
+index 2cb1788d6d4a1dcb8cf30d05ca83543723546cbc..d049196b2f4cbcf7d66030de7aa9762bbe0db1bb 100644
+--- a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.css
++++ b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.css
+@@ -23,7 +23,7 @@
+   --color-searchbox-results-background-selected: var(--zenium-popup-selected);
+   --cr-searchbox-icon-left-position: 10px;
+   --cr-searchbox-icon-top-position: 0;
+-  --cr-searchbox-border-radius: calc(0.5 * var(--cr-searchbox-height));
++  --cr-searchbox-border-radius: 10px;
+   --cr-searchbox-icon-spacing: 11px;
+   --cr-searchbox-icon-width: 26px;
+   --cr-searchbox-inner-icon-margin: 8px;
+@@ -123,7 +123,7 @@
+ }
+ 
+ :host([searchbox-voice-search-enabled_]) {
+-  --cr-searchbox-voice-search-button-width: var(--cr-searchbox-icon-width);
++  --cr-searchbox-voice-search-button-width: 0px;
+ }
+ 
+ :host([searchbox-lens-search-enabled_]) {
+@@ -250,7 +250,7 @@ cr-searchbox-dropdown::part(dropdown-content) {
+ }
+ 
+ .searchbox-icon-button-container.voice {
+-  margin-inline-end: 4px;
++  display: none;
+ }
+ 
+ :host([multi-line-enabled]) {
+diff --git a/chrome/browser/ui/omnibox/omnibox_edit_model.cc b/chrome/browser/ui/omnibox/omnibox_edit_model.cc
+index 7528b349c48d83458dd935993018d0a9bb671703..d0d7dc9cf0b58e51c576a7f3719c92690b0604ba 100644
+--- a/chrome/browser/ui/omnibox/omnibox_edit_model.cc
++++ b/chrome/browser/ui/omnibox/omnibox_edit_model.cc
+@@ -1165,12 +1165,23 @@ void OmniboxEditModel::OnSetFocus(bool control_down) {
+ 
+ void OmniboxEditModel::StartZeroSuggestRequest(
+     bool user_clobbered_permanent_text) {
+-  // Early exit if a query is already in progress or the popup is already open.
+-  // This is what allows this method to be called multiple times in multiple
+-  // code locations without harm.
++  // Standard focus requests should not replace an active query or reopen an
++  // already visible popup.
+   if (!autocomplete_controller()->done() || controller_->IsPopupOpen()) {
+     return;
+   }
++  StartZeroSuggestRequest(user_clobbered_permanent_text,
++                          GetPageClassification());
++}
++
++void OmniboxEditModel::StartZeroSuggestRequest(
++    bool user_clobbered_permanent_text,
++    metrics::OmniboxEventProto::PageClassification page_classification) {
++  // An explicit browser-owned request may replace an open popup's contents,
++  // but should not interrupt another query that is still running.
++  if (!autocomplete_controller()->done()) {
++    return;
++  }
+ 
+   // Early exit if the page has not loaded yet, so we don't annoy users.
+   if (!controller_->client()->CurrentPageExists()) {
+@@ -1188,7 +1199,7 @@ void OmniboxEditModel::StartZeroSuggestRequest(
+   // match can be wrong. The full page URL is anyways in set_current_url().
+   // Don't attempt to use https as the default scheme for these requests.
+   input_ = AutocompleteInput(
+-      GetText(), GetPageClassification(),
++      GetText(), page_classification,
+       controller_->client()->GetSchemeClassifier(),
+       /*should_use_https_as_default_scheme=*/false,
+       controller_->client()->GetHttpsPortForTesting(),
+diff --git a/chrome/browser/ui/omnibox/omnibox_edit_model.h b/chrome/browser/ui/omnibox/omnibox_edit_model.h
+index 8e2354802cf8a0ae37f39ed714975783a2cac554..507db418a19adc01540ba7306cb6f559557812df 100644
+--- a/chrome/browser/ui/omnibox/omnibox_edit_model.h
++++ b/chrome/browser/ui/omnibox/omnibox_edit_model.h
+@@ -372,6 +372,13 @@ class OmniboxEditModel {
+   // done.
+   void StartZeroSuggestRequest(bool user_clobbered_permanent_text = false);
+ 
++  // Starts a zero-prefix request using an explicit page classification. This
++  // is used by browser-owned search surfaces whose context is intentionally
++  // different from the page in the active tab.
++  void StartZeroSuggestRequest(
++      bool user_clobbered_permanent_text,
++      metrics::OmniboxEventProto::PageClassification page_classification);
++
+   // Sets the visibility of the caret in the omnibox, if it has focus. The
+   // visibility of the caret is reset to visible if either
+   //   - The user starts typing, or
+diff --git a/chrome/browser/ui/views/frame/browser_view.cc b/chrome/browser/ui/views/frame/browser_view.cc
+index 6ffeeb06a58e03cd8efb63369a71ea3d5dea7698..c43609a3b66b6d4f44fc4b089dfee72f8aeb0f2f 100644
+--- a/chrome/browser/ui/views/frame/browser_view.cc
++++ b/chrome/browser/ui/views/frame/browser_view.cc
+@@ -104,6 +104,8 @@
+ #include "chrome/browser/ui/fullscreen/browser_window_fullscreen_controller.h"
+ #include "chrome/browser/ui/layout_constants.h"
+ #include "chrome/browser/ui/navigator/browser_navigator.h"
++#include "chrome/browser/ui/omnibox/omnibox_controller.h"
++#include "chrome/browser/ui/omnibox/omnibox_edit_model.h"
+ #include "chrome/browser/ui/omnibox/omnibox_next_features.h"
+ #include "chrome/browser/ui/omnibox/omnibox_popup_view.h"
+ #include "chrome/browser/ui/omnibox/omnibox_view.h"
+@@ -3046,7 +3048,18 @@ void BrowserView::ShowZeniumNewTabOmnibox() {
+   zenium_new_tab_omnibox_active_ = true;
+   SetFocusToLocationBar(/*is_user_initiated=*/true);
+   if (LocationBar* location_bar = GetLocationBar()) {
+-    location_bar->GetOmniboxView()->SetUserText(std::u16string());
++    OmniboxController* controller = location_bar->GetOmniboxController();
++    OmniboxView* view = location_bar->GetOmniboxView();
++
++    // A New Tab starts as an empty draft, independent of the active page. The
++    // focus handoff must finish first because the full WebUI popup stops the
++    // query it inherited from the native location bar during that transition.
++    controller->StopAutocomplete(/*clear_result=*/true);
++    view->SetUserText(std::u16string(), /*update_popup=*/false);
++    controller->edit_model()->StartZeroSuggestRequest(
++        /*user_clobbered_permanent_text=*/true,
++        metrics::OmniboxEventProto::OTHER);
++    location_bar->GetOmniboxPopupView()->SyncNativeStateToWebUI();
+   }
+ }
+ 
+diff --git a/components/omnibox/browser/autocomplete_controller.cc b/components/omnibox/browser/autocomplete_controller.cc
+index 5126abc2fd5d1c87e29ed5277fa85f98ce52262f..edf2c7079dd065d1276b3ca570574058c8972365 100644
+--- a/components/omnibox/browser/autocomplete_controller.cc
++++ b/components/omnibox/browser/autocomplete_controller.cc
+@@ -919,6 +919,14 @@ void AutocompleteController::OnProviderUpdate(
+     UpdateResult(UpdateType::kAsyncPass, allow_post_done_updates);
+   }
+ 
++  // The floating New Tab popup is already visible by the time local history
++  // returns. Publish most-visited matches immediately so its first frame does
++  // not remain an empty input while the generic notification debounce waits.
++  if (updated_matches && provider &&
++      provider->type() == AutocompleteProvider::TYPE_MOST_VISITED_SITES) {
++    notify_changed_debouncer_.FlushRequest();
++  }
++
+   if (done_state == ProviderDoneState::kAllDone) {
+     size_t calculator_count =
+         std::ranges::count_if(published_result_, [](const auto& match) {
+diff --git a/components/omnibox/common/omnibox_feature_configs.cc b/components/omnibox/common/omnibox_feature_configs.cc
+index fc14abacb1673d29bd296c110f7b2d4cb20b6552..85a97914b7210e27531e2241437ab4e558fb0937 100644
+--- a/components/omnibox/common/omnibox_feature_configs.cc
++++ b/components/omnibox/common/omnibox_feature_configs.cc
+@@ -620,10 +620,10 @@ OmniboxZpsSuggestionLimit::OmniboxZpsSuggestionLimit() {
+       base::FeatureParam<size_t>(&kOmniboxZpsSuggestionLimit,
+                                  "OmniboxZpsMaxSearchSuggestions", 6)
+           .Get();
+-  max_url_suggestions =
+-      base::FeatureParam<size_t>(&kOmniboxZpsSuggestionLimit,
+-                                 "OmniboxZpsMaxUrlSuggestions", 0)
+-          .Get();
++  // Keep enough local URL rows for Zenium's floating New Tab palette. Upstream
++  // defaults this to zero, which creates valid most-visited matches and then
++  // removes all of them during result grouping.
++  max_url_suggestions = 5;
+ }
+ 
+ OmniboxZpsSuggestionLimit::OmniboxZpsSuggestionLimit(
+@@ -638,10 +638,12 @@ OmniboxZpsSuggestionLimit::~OmniboxZpsSuggestionLimit() = default;
+ 
+ BASE_FEATURE(OmniboxUrlSuggestionsOnFocus::kOmniboxUrlSuggestionsOnFocus,
+              "OmniboxUrlSuggestionsOnFocus",
+-             base::FEATURE_DISABLED_BY_DEFAULT);
++             base::FEATURE_ENABLED_BY_DEFAULT);
+ OmniboxUrlSuggestionsOnFocus::OmniboxUrlSuggestionsOnFocus() {
+   const char kMvtScoringParamRecencyFactor_Classic[] = "default";
+-  enabled = base::FeatureList::IsEnabled(kOmniboxUrlSuggestionsOnFocus);
++  // Zenium's floating New Tab surface relies on local URL suggestions even
++  // when a Chromium field-trial seed disables contextual desktop ZPS.
++  enabled = true;
+   show_recently_closed_tabs =
+       base::FeatureParam<bool>(&kOmniboxUrlSuggestionsOnFocus,
+                                "ShowRecentlyClosedTabs", false)
+@@ -660,10 +662,11 @@ OmniboxUrlSuggestionsOnFocus::OmniboxUrlSuggestionsOnFocus() {
+                                "OnFocusMostVisitedDirectlyQueryHistoryService",
+                                true)
+           .Get();
+-  prefetch_most_visited_sites =
+-      base::FeatureParam<bool>(&kOmniboxUrlSuggestionsOnFocus,
+-                               "OnFocusPrefetchMostVisitedSites", true)
+-          .Get();
++  // The floating New Tab is opened on demand and must be populated by the
++  // current request. Chromium's prefetch-only path intentionally updates a
++  // cache without notifying the open popup, leaving the first invocation
++  // empty.
++  prefetch_most_visited_sites = false;
+   prefetch_most_visited_sites_delay_ms =
+       base::FeatureParam<int>(&kOmniboxUrlSuggestionsOnFocus,
+                               "OnFocusPrefetchDelay", 300)
