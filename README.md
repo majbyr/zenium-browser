@@ -1,9 +1,3 @@
-<div align="center">
-  <img src="resources/branding/app_icon/raw.png" alt="Zenium logo" width="120">
-  <h1>Zenium Browser</h1>
-  <p>A privacy-oriented Chromium browser with a Zen/Arc-inspired interface.</p>
-</div>
-
 ## About
 
 Zenium is an experimental browser built on the
