@@ -1,0 +1,333 @@
+--- a/chrome/browser/ui/views/frame/browser_view.cc
++++ b/chrome/browser/ui/views/frame/browser_view.cc
+@@ -2046,6 +2046,19 @@
+     }
+   }
+ 
++  // The extensions menu is not always discoverable through the generic owned
++  // bubble walk. Keep whichever chrome hosts its anchor visible explicitly.
++  const bool extensions_menu_showing =
++      toolbar_ && toolbar_->extensions_container() &&
++      toolbar_->extensions_container()->IsExtensionsMenuShowing();
++  if (extensions_menu_showing) {
++    if (toolbar_in_side_chrome) {
++      reveal_side = true;
++    } else {
++      reveal_top = true;
++    }
++  }
++
+   if (reveal_top) {
+     if (!zen_top_chrome_animation_.IsShowing()) {
+       zen_top_chrome_animation_.Show();
+--- a/chrome/browser/ui/views/extensions/extensions_menu_coordinator.cc
++++ b/chrome/browser/ui/views/extensions/extensions_menu_coordinator.cc
+@@ -14,6 +14,7 @@
+ #include "chrome/browser/ui/ui_features.h"
+ #include "chrome/browser/ui/views/chrome_layout_provider.h"
+ #include "chrome/browser/ui/views/extensions/extensions_menu_delegate_desktop.h"
++#include "chrome/browser/ui/views/frame/browser_view.h"
+ #include "extensions/browser/permissions_manager.h"
+ #include "extensions/common/extension_features.h"
+ #include "ui/base/mojom/dialog_button.mojom.h"
+@@ -23,6 +24,21 @@
+ #include "ui/views/view_tracker.h"
+ #include "ui/views/widget/widget.h"
+ 
++namespace {
++
++views::BubbleBorder::Arrow GetExtensionsMenuArrow(
++    BrowserWindowInterface* browser) {
++  BrowserView* browser_view = BrowserView::GetBrowserViewForBrowser(
++      browser->GetBrowserForMigrationOnly());
++  if (browser_view && browser_view->IsToolbarInVerticalSidebar() &&
++      !browser_view->IsVerticalTabStripRightAligned()) {
++    return views::BubbleBorder::Arrow::TOP_LEFT;
++  }
++  return views::BubbleBorder::Arrow::TOP_RIGHT;
++}
++
++}  // namespace
++
+ ExtensionsMenuCoordinator::ExtensionsMenuCoordinator(
+     BrowserWindowInterface* browser,
+     ExtensionsContainer* extensions_container)
+@@ -83,7 +99,7 @@
+   DCHECK(base::FeatureList::IsEnabled(
+       extensions_features::kExtensionsMenuAccessControl));
+   auto bubble_delegate = std::make_unique<views::BubbleDialogDelegate>(
+-      anchor, views::BubbleBorder::TOP_RIGHT,
++      anchor, GetExtensionsMenuArrow(browser_),
+       views::BubbleBorder::DIALOG_SHADOW, /*autosize=*/true);
+   bubble_delegate->SetOwnedByWidget(
+       views::WidgetDelegate::OwnedByWidgetPassKey());
+--- a/chrome/browser/ui/views/extensions/extensions_menu_view.cc
++++ b/chrome/browser/ui/views/extensions/extensions_menu_view.cc
+@@ -25,6 +25,7 @@
+ #include "chrome/browser/ui/views/extensions/extension_action_delegate_desktop.h"
+ #include "chrome/browser/ui/views/extensions/extensions_container_views.h"
+ #include "chrome/browser/ui/views/extensions/extensions_menu_item_view.h"
++#include "chrome/browser/ui/views/frame/browser_view.h"
+ #include "chrome/grit/generated_resources.h"
+ #include "components/vector_icons/vector_icons.h"
+ #include "extensions/common/extension_features.h"
+@@ -53,6 +54,17 @@
+ 
+ ExtensionsMenuView* g_extensions_dialog = nullptr;
+ 
++views::BubbleBorder::Arrow GetExtensionsMenuArrow(
++    BrowserWindowInterface* browser) {
++  BrowserView* browser_view = BrowserView::GetBrowserViewForBrowser(
++      browser->GetBrowserForMigrationOnly());
++  if (browser_view && browser_view->IsToolbarInVerticalSidebar() &&
++      !browser_view->IsVerticalTabStripRightAligned()) {
++    return views::BubbleBorder::Arrow::TOP_LEFT;
++  }
++  return views::BubbleBorder::Arrow::TOP_RIGHT;
++}
++
+ constexpr int EXTENSIONS_SETTINGS_ID = 42;
+ 
+ bool CompareExtensionMenuItemViews(const ExtensionMenuItemView* a,
+@@ -78,7 +90,7 @@
+     ExtensionsContainer* extensions_container,
+     ExtensionsContainerViews* extensions_container_views)
+     : BubbleDialogDelegateView(views::BubbleAnchor(anchor_view),
+-                               views::BubbleBorder::TOP_RIGHT),
++                               GetExtensionsMenuArrow(browser)),
+       browser_(browser),
+       extensions_container_(CHECK_DEREF(extensions_container)),
+       extensions_container_views_(extensions_container_views),
+--- a/chrome/browser/ui/views/frame/vertical_tab_strip_region_view.cc
++++ b/chrome/browser/ui/views/frame/vertical_tab_strip_region_view.cc
+@@ -301,7 +301,7 @@
+   }
+   zen_mode_floating_style_ = floating;
+   UpdateResizeAreaVisibility();
+-  SetClipLayerToVisibleBounds(floating);
++  SetClipLayerToVisibleBounds(floating && !omnibox_open_lock_);
+   UpdateInteriorMargin();
+ 
+   auto* const background =
+@@ -1140,6 +1140,14 @@
+   } else {
+     omnibox_open_lock_.reset();
+   }
++
++  // The focused sidebar omnibox intentionally grows over the page to match
++  // its results popup. Do not clip that overflow to the sidebar's floating
++  // bounds while it is open; restore the rounded-sidebar clip afterwards.
++  const bool allow_omnibox_overflow =
++      is_open && browser_view_->IsToolbarInVerticalSidebar();
++  SetClipLayerToVisibleBounds(zen_mode_floating_style_ &&
++                              !allow_omnibox_overflow);
+ }
+ 
+ void VerticalTabStripRegionView::OnActiveTabChanged(
+--- a/chrome/browser/ui/views/toolbar/toolbar_view.cc
++++ b/chrome/browser/ui/views/toolbar/toolbar_view.cc
+@@ -84,6 +84,7 @@
+ #include "chrome/browser/ui/views/location_bar/intent_chip_button.h"
+ #include "chrome/browser/ui/views/location_bar/star_view.h"
+ #include "chrome/browser/ui/views/location_bar/webui_location_bar.h"
++#include "chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.h"
+ #include "chrome/browser/ui/views/page_action/page_action_container_view.h"
+ #include "chrome/browser/ui/views/page_action/page_action_icon_container.h"
+ #include "chrome/browser/ui/views/page_action/page_action_icon_controller.h"
+@@ -195,6 +196,8 @@
+ constexpr int kVerticalSidebarRowGap = 4;
+ constexpr int kVerticalSidebarLocationBarHeight = 36;
+ constexpr int kVerticalSidebarMinimumLocationBarWidth = 120;
++constexpr int kZeniumVerticalOmniboxPopupWidth = 520;
++constexpr int kZeniumVerticalOmniboxPopupMargin = 8;
+ 
+ constexpr int kDynamicNewTabButtonIconSize = 16;
+ 
+@@ -280,10 +283,12 @@
+ 
+   CenteredLocationBarLayout(views::View* location_bar,
+                             GetCenteredBoundsCallback callback,
+-                            IsVerticalSidebarCallback vertical_sidebar_callback)
++                            IsVerticalSidebarCallback vertical_sidebar_callback,
++                            BrowserView* browser_view)
+       : location_bar_(location_bar),
+         callback_(std::move(callback)),
+-        vertical_sidebar_callback_(std::move(vertical_sidebar_callback)) {}
++        vertical_sidebar_callback_(std::move(vertical_sidebar_callback)),
++        browser_view_(browser_view) {}
+ 
+   CenteredLocationBarLayout(const CenteredLocationBarLayout&) = delete;
+   CenteredLocationBarLayout& operator=(const CenteredLocationBarLayout&) =
+@@ -324,18 +329,39 @@
+         controls_bottom = kVerticalSidebarHorizontalPadding;
+       }
+ 
+-      const int location_bar_width =
++      const int sidebar_location_bar_width =
+           std::max(0, toolbar_width - 2 * kVerticalSidebarHorizontalPadding);
++      int location_bar_width = sidebar_location_bar_width;
++      int location_bar_x = kVerticalSidebarHorizontalPadding;
++      if (location_bar_->HasFocus() && browser_view_) {
++        const gfx::Insets alignment_insets =
++            RoundedOmniboxResultsFrame::GetLocationBarAlignmentInsets();
++        const gfx::Insets shadow_insets =
++            RoundedOmniboxResultsFrame::GetShadowInsets();
++        const int available_popup_width = std::max(
++            0, browser_view_->width() -
++                   2 * kZeniumVerticalOmniboxPopupMargin -
++                   shadow_insets.width());
++        const int expanded_location_bar_width = std::max(
++            0, std::min(kZeniumVerticalOmniboxPopupWidth,
++                        available_popup_width) -
++                   alignment_insets.width());
++        location_bar_width =
++            std::max(location_bar_width, expanded_location_bar_width);
++        if (browser_view_->IsVerticalTabStripRightAligned()) {
++          location_bar_x = toolbar_width - kVerticalSidebarHorizontalPadding -
++                           location_bar_width;
++        }
++      }
+       const int location_bar_height =
+           location_bar_->GetPreferredSize().height();
+       // LayoutManagerBase applies this value to the view itself. Base the
+       // visibility on the available width so expanding the sidebar restores
+       // the address row after it was hidden in the collapsed state.
+       location_bar_layout->visible =
+-          location_bar_width >= kVerticalSidebarMinimumLocationBarWidth;
++          sidebar_location_bar_width >= kVerticalSidebarMinimumLocationBarWidth;
+       location_bar_layout->bounds =
+-          gfx::Rect(kVerticalSidebarHorizontalPadding,
+-                    controls_bottom + kVerticalSidebarRowGap,
++          gfx::Rect(location_bar_x, controls_bottom + kVerticalSidebarRowGap,
+                     location_bar_width, location_bar_height);
+ 
+       layout.host_size.set_width(toolbar_width);
+@@ -355,6 +381,7 @@
+   const raw_ptr<views::View> location_bar_;
+   GetCenteredBoundsCallback callback_;
+   IsVerticalSidebarCallback vertical_sidebar_callback_;
++  const raw_ptr<BrowserView> browser_view_;
+ };
+ 
+ }  // namespace
+@@ -1812,7 +1839,8 @@
+           base::BindRepeating(&ToolbarView::GetCenteredLocationBarBounds,
+                               base::Unretained(this)),
+           base::BindRepeating(&ToolbarView::IsVerticalLayout,
+-                              base::Unretained(this))));
++                              base::Unretained(this)),
++          browser_view_));
+ 
+   layout_manager_->SetOrientation(views::LayoutOrientation::kHorizontal)
+       .SetCrossAxisAlignment(views::LayoutAlignment::kCenter)
+--- a/chrome/browser/ui/views/location_bar/location_bar_view.cc
++++ b/chrome/browser/ui/views/location_bar/location_bar_view.cc
+@@ -2084,6 +2084,16 @@
+   // the omnibox is intentional, snapping is better than transitioning here.
+   hover_animation_.Reset();
+   RefreshBackground();
++#if BUILDFLAG(IS_LINUX)
++  if (BrowserView* browser_view =
++          BrowserView::GetBrowserViewForBrowser(browser_);
++      browser_view && browser_view->IsToolbarInVerticalSidebar()) {
++    SetClipLayerToVisibleBounds(false);
++  }
++#endif
++  if (parent()) {
++    parent()->InvalidateLayout();
++  }
+ 
+   // The AI mode page action icon view should only be visible when the omnibox
+   // is focused, so if there is a change in focus, refresh the icon.
+@@ -2104,6 +2114,16 @@
+     views::FocusRing::Get(this)->Refresh();
+   }
+   RefreshBackground();
++#if BUILDFLAG(IS_LINUX)
++  if (BrowserView* browser_view =
++          BrowserView::GetBrowserViewForBrowser(browser_);
++      browser_view && browser_view->IsToolbarInVerticalSidebar()) {
++    SetClipLayerToVisibleBounds(true);
++  }
++#endif
++  if (parent()) {
++    parent()->InvalidateLayout();
++  }
+ 
+   // The AI mode page action icon view should only be visible when the omnibox
+   // is focused, so if there is a change in focus, refresh the icon.
+--- a/chrome/browser/ui/views/omnibox/omnibox_popup_view_views.cc
++++ b/chrome/browser/ui/views/omnibox/omnibox_popup_view_views.cc
+@@ -751,7 +751,9 @@
+   popup_height += RoundedOmniboxResultsFrame::GetNonResultSectionHeight();
+ 
+   // The rounded popup is always offset the same amount from the omnibox.
+-  gfx::Rect content_rect = location_bar_view_->GetBoundsInScreen();
++  const gfx::Rect location_bar_bounds =
++      location_bar_view_->GetBoundsInScreen();
++  gfx::Rect content_rect = location_bar_bounds;
+   content_rect.Inset(
+       -RoundedOmniboxResultsFrame::GetLocationBarAlignmentInsets());
+   content_rect.set_height(popup_height);
+@@ -768,12 +770,17 @@
+     const int popup_width =
+         std::min(kZeniumVerticalOmniboxPopupWidth, available_width);
+     content_rect.set_width(std::max(content_rect.width(), popup_width));
+-    content_rect.set_x(
+-        browser_view->IsVerticalTabStripRightAligned()
+-            ? browser_bounds.right() - kZeniumVerticalOmniboxPopupMargin -
+-                  shadow_insets.right() - content_rect.width()
+-            : browser_bounds.x() + kZeniumVerticalOmniboxPopupMargin +
+-                  shadow_insets.left());
++    // Keep the popup cutout aligned with the expanded location bar. On a
++    // right-aligned sidebar the location bar grows leftward, so preserve its
++    // right edge instead.
++    const gfx::Insets alignment_insets =
++        RoundedOmniboxResultsFrame::GetLocationBarAlignmentInsets();
++    content_rect.set_x(browser_view->IsVerticalTabStripRightAligned()
++                           ? location_bar_bounds.right() +
++                                 alignment_insets.right() -
++                                 content_rect.width()
++                           : location_bar_bounds.x() -
++                                 alignment_insets.left());
+   }
+ 
+   if (omnibox::IsWebUIOmniboxPopupEnabled() &&
+--- a/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.cc
++++ b/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.cc
+@@ -164,6 +164,18 @@
+ 
+   void OnThemeChanged() override {
+     views::View::OnThemeChanged();
++    UpdateBackground();
++  }
++
++  void Layout(PassKey) override {
++    if (location_bar_size_ != location_bar_->Bounds().size()) {
++      UpdateBackground();
++    }
++  }
++
++ private:
++  void UpdateBackground() {
++    location_bar_size_ = location_bar_->Bounds().size();
+     const SkColor background_color =
+         GetColorProvider()->GetColor(kColorOmniboxResultsBackground);
+ 
+@@ -172,7 +184,7 @@
+     // not antialiased, since the goal is to completely cover the underlying
+     // pixels, and AA would let those on the edge partly bleed through.
+     SetBackground(LocationBarView::CreateRoundRectBackground(
+-        SK_ColorTRANSPARENT, background_color, location_bar_->Bounds().size(),
++        SK_ColorTRANSPARENT, background_color, location_bar_size_,
+         SkBlendMode::kSrc, false));
+   }
+ 
+@@ -218,6 +230,7 @@
+ 
+  private:
+   raw_ptr<const LocationBar> location_bar_;
++  gfx::Size location_bar_size_;
+ };
+ 
+ BEGIN_METADATA(TopBackgroundView)
