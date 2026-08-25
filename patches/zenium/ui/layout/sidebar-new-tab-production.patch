@@ -1,0 +1,214 @@
+diff --git a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.css b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.css
+--- a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.css
++++ b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.css
+@@ -152,6 +152,13 @@ cr-searchbox-input::part(searchbox-input) {
+   padding-top: 0;
+ }
+ 
++/* The floating palette remains useful when empty: unlike Chromium's generic
++ * search box, focusing it must not hide Zenium's Search... prompt. */
++cr-searchbox-input::part(searchbox-input):focus::placeholder {
++  opacity: 1;
++  visibility: visible;
++}
++
+ :host([searchbox-chrome-refresh-theming]) cr-searchbox-input::part(searchbox-input)::selection {
+   background-color: var(--color-searchbox-selection-background);
+   color: var(--color-searchbox-selection-foreground);
+diff --git a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts
+--- a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts
++++ b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts
+@@ -543,7 +543,7 @@ export class OmniboxPopupSearchboxElement extends
+     if (this.placeholderText) {
+       return this.placeholderText;
+     }
+-    return this.i18n('searchBoxHint');
++    return 'Search...';
+   }
+ 
+   protected onSearchboxInputTextUpdated_(
+diff --git a/chrome/browser/ui/views/frame/browser_view.cc b/chrome/browser/ui/views/frame/browser_view.cc
+--- a/chrome/browser/ui/views/frame/browser_view.cc
++++ b/chrome/browser/ui/views/frame/browser_view.cc
+@@ -190,6 +190,7 @@
+ #include "chrome/browser/ui/views/new_tab_footer/footer_web_view.h"
+ #include "chrome/browser/ui/views/omnibox/omnibox_popup_closer.h"
+ #include "chrome/browser/ui/views/omnibox/omnibox_popup_view_browser_view.h"
++#include "chrome/browser/ui/views/omnibox/omnibox_popup_view_full_webui.h"
+ #include "chrome/browser/ui/views/omnibox/omnibox_view_views.h"
+ #include "chrome/browser/ui/views/page_action/page_action_icon_controller.h"
+ #include "chrome/browser/ui/views/page_action/page_action_icon_view.h"
+@@ -3057,15 +3058,16 @@ void BrowserView::ShowZeniumNewTabOmnibox() {
+     zenium_new_tab_omnibox_active_ = true;
+     SetFocusToLocationBar(/*is_user_initiated=*/true);
+ 
+-    // The focus handoff can stop or replace the inherited query. Reassert the
+-    // empty draft and issue the dedicated New Tab zero-suggest request once
+-    // the popup owns focus.
++    // The focus handoff can replace the inherited draft. Reassert the empty
++    // text, then begin a distinct WebUI session. The explicit session signal
++    // bypasses native-state deduplication so zero-prefix suggestions are
++    // requested on every New Tab click.
+     controller->StopAutocomplete(/*clear_result=*/true);
+     view->SetUserText(std::u16string(), /*update_popup=*/false);
+-    controller->edit_model()->StartZeroSuggestRequest(
+-        /*user_clobbered_permanent_text=*/true,
+-        metrics::OmniboxEventProto::OTHER);
+-    location_bar->GetOmniboxPopupView()->SyncNativeStateToWebUI();
++    // Vertical-sidebar address editing is backed by the full WebUI omnibox.
++    // Its explicit session API bypasses native-state deduplication.
++    static_cast<OmniboxPopupViewFullWebUI*>(location_bar->GetOmniboxPopupView())
++        ->BeginZeniumNewTab();
+     return;
+   }
+ 
+@@ -3086,7 +3091,11 @@ void BrowserView::SetZeniumOmniboxPopupOpen(bool open) {
+ 
+   if (open && IsToolbarInVerticalSidebar()) {
+     zen_cursor_exit_timer_.Stop();
+-    UpdateZenModeReveal(/*reveal_top=*/false, /*reveal_side=*/true);
++    // Lock the sidebar open without changing the current top-chrome target.
++    // The floating palette must not resize the page frame when it appears.
++    UpdateZenModeReveal(
++        /*reveal_top=*/zen_top_chrome_animation_.IsShowing(),
++        /*reveal_side=*/true);
+   } else {
+     UpdateZenModeRevealFromCursor();
+   }
+@@ -3111,7 +3121,7 @@ void BrowserView::SetFocusToLocationBar(bool is_user_initiated) {
+   // In zen mode, snap the toolbar to fully shown so the omnibox is visible
+   // and can receive focus.  A synchronous layout is required so the toolbar
+   // has non-zero height before FocusLocation runs.
+-  if (zen_mode_enabled_) {
++  if (zen_mode_enabled_ && !IsToolbarInVerticalSidebar()) {
+     RevealZenModeTopChromeImmediately();
+   }
+ 
+diff --git a/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.cc b/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.cc
+--- a/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.cc
++++ b/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.cc
+@@ -64,13 +64,28 @@ OmniboxPopupFullPresenter::~OmniboxPopupFullPresenter() = default;
+ void OmniboxPopupFullPresenter::Show() {
+   const bool was_shown = IsShown();
+   OmniboxPopupPresenterBase::Show();
+-  if (BrowserView* browser_view = GetBrowserView(location_bar())) {
++  BrowserView* browser_view = GetBrowserView(location_bar());
++  if (browser_view) {
+     browser_view->SetZeniumOmniboxPopupOpen(true);
+   }
+   // Placement can change while the popup is already visible (for example,
+   // clicking New Tab while editing the address). The base presenter skips
+   // layout in that case, so synchronize explicitly.
+   SynchronizePopupBounds();
++  const bool is_centered_new_tab = browser_view &&
++                                   browser_view->IsToolbarInVerticalSidebar() &&
++                                   browser_view->IsZeniumNewTabOmniboxActive();
++  auto* results_frame =
++      GetWidget() ? views::AsViewClass<FullWebUIOmniboxFrame>(GetResultsFrame())
++                  : nullptr;
++  if (is_centered_new_tab && results_frame) {
++    // The centered palette is a standalone editing surface. Forwarding its
++    // input row to the sidebar location bar makes the overlapping portion
++    // non-interactive, so disable forwarding for the entire palette session.
++    forward_events_timer_.Stop();
++    results_frame->SetForwardMouseEvents(false);
++  }
++
+   if (!was_shown) {
+     // Set the request time to now when the popup is first shown. This ensures
+     // that latency is measured from the user interaction to show, even if the
+@@ -93,10 +108,11 @@ void OmniboxPopupFullPresenter::Show() {
+ 
+     // Forward events for a short period of time so that double clicks on the
+     // omnibox can still be captured.
+-    if (GetWidget() && base::FeatureList::IsEnabled(
+-                           omnibox::kWebUIOmniboxFullPopupDoubleClick)) {
+-      auto* results_frame =
+-          views::AsViewClass<FullWebUIOmniboxFrame>(GetResultsFrame());
++    if (!is_centered_new_tab && GetWidget() &&
++        base::FeatureList::IsEnabled(
++            omnibox::kWebUIOmniboxFullPopupDoubleClick)) {
++      results_frame =
++          views::AsViewClass<FullWebUIOmniboxFrame>(GetResultsFrame());
+       CHECK(results_frame);
+       results_frame->SetForwardMouseEvents(true);
+       forward_events_timer_.Start(
+@@ -123,6 +139,15 @@ void OmniboxPopupFullPresenter::Hide() {
+     browser_view->SetZeniumOmniboxPopupOpen(popup_still_shown);
+     if (!popup_still_shown) {
++      const bool was_new_tab = browser_view->IsZeniumNewTabOmniboxActive();
+       browser_view->ClearZeniumNewTabOmnibox();
++      if (was_new_tab) {
++        // A dismissed palette owns an ephemeral empty draft. Clear its mode
++        // first to avoid re-entry, then restore the active page's permanent
++        // address and release omnibox focus.
++        controller()->StopAutocomplete(/*clear_result=*/true);
++        location_bar()->Revert();
++        controller()->edit_model()->OnKillFocus();
++      }
+     }
+   }
+ }
+@@ -269,7 +294,13 @@ void OmniboxPopupFullPresenter::WidgetDestroyed() {
+   forward_events_timer_.Stop();
+   if (BrowserView* browser_view = GetBrowserView(location_bar())) {
+     browser_view->SetZeniumOmniboxPopupOpen(false);
++    const bool was_new_tab = browser_view->IsZeniumNewTabOmniboxActive();
+     browser_view->ClearZeniumNewTabOmnibox();
++    if (was_new_tab) {
++      controller()->StopAutocomplete(/*clear_result=*/true);
++      location_bar()->Revert();
++      controller()->edit_model()->OnKillFocus();
++    }
+   }
+   // Update the popup state manager if widget was destroyed externally, e.g., by
+   // the OS. This ensures the popup state manager stays in sync.
+diff --git a/chrome/browser/ui/views/omnibox/omnibox_popup_view_full_webui.cc b/chrome/browser/ui/views/omnibox/omnibox_popup_view_full_webui.cc
+--- a/chrome/browser/ui/views/omnibox/omnibox_popup_view_full_webui.cc
++++ b/chrome/browser/ui/views/omnibox/omnibox_popup_view_full_webui.cc
+@@ -105,6 +105,17 @@ void OmniboxPopupViewFullWebUI::SyncNativeStateToWebUI() {
+   }
+ }
+ 
++void OmniboxPopupViewFullWebUI::BeginZeniumNewTab() {
++  // A new palette session is a meaningful state transition even when its
++  // empty text, selection, and focus happen to match the previous session.
++  // Clearing the deduplication cache also covers a preloaded WebUI whose
++  // handler is not attached yet: its subsequent native-state request will
++  // deliver the new session because these values remain unset.
++  last_sent_text_.reset();
++  last_sent_focus_.reset();
++  SyncNativeStateToWebUI();
++}
++
+ void OmniboxPopupViewFullWebUI::SaveStateToTab(content::WebContents* tab) {
+   DCHECK(tab);
+ 
+@@ -247,10 +258,9 @@ void OmniboxPopupViewFullWebUI::OnTabChanged(
+-    // No saved state, so revert to default and re-evaluate popup visibility
+-    // based on current focus.
++    // A tab without saved omnibox state must not inherit focus from the tab
++    // that was just left. Restore its permanent address with the popup closed.
+     controller()->edit_model()->Revert();
++    controller()->edit_model()->OnKillFocus();
+     controller()->edit_model()->OnChanged();
+-    target_popup_state = controller()->edit_model()->has_focus()
+-                             ? OmniboxPopupState::kFull
+-                             : OmniboxPopupState::kNone;
+-    should_focus_popup = controller()->edit_model()->has_focus();
++    target_popup_state = OmniboxPopupState::kNone;
++    should_focus_popup = false;
+   }
+ 
+diff --git a/chrome/browser/ui/views/omnibox/omnibox_popup_view_full_webui.h b/chrome/browser/ui/views/omnibox/omnibox_popup_view_full_webui.h
+--- a/chrome/browser/ui/views/omnibox/omnibox_popup_view_full_webui.h
++++ b/chrome/browser/ui/views/omnibox/omnibox_popup_view_full_webui.h
+@@ -34,6 +34,8 @@ class OmniboxPopupViewFullWebUI : public OmniboxPopupViewWebUI {
+   // Syncs the text and selection state from the native location bar to the
+   // WebUI omnibox.
+   void SyncNativeStateToWebUI() override;
++  // Forces a fresh empty-input state delivery for every New Tab invocation.
++  void BeginZeniumNewTab();
+   // Saves the current omnibox state (e.g. input) to the given tab's
+   // user data, so it can be restored when switching back to this tab.
+   void SaveStateToTab(content::WebContents* tab) override;
