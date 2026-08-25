@@ -1,6 +1,222 @@
+diff --git a/chrome/browser/resources/omnibox_popup/full_app.html.ts b/chrome/browser/resources/omnibox_popup/full_app.html.ts
+index 64d8c32..c5e3339 100644
+--- a/chrome/browser/resources/omnibox_popup/full_app.html.ts
++++ b/chrome/browser/resources/omnibox_popup/full_app.html.ts
+@@ -9,6 +9,16 @@ import type {OmniboxFullAppElement} from './full_app.js';
+ export function getHtml(this: OmniboxFullAppElement) {
+   // clang-format off
+   return html`<!--_html_template_start_-->
++<style>
++  :host {
++    display: block;
++    width: 100%;
++  }
++
++  omnibox-popup-searchbox {
++    width: 100%;
++  }
++</style>
+ <omnibox-popup-searchbox></omnibox-popup-searchbox>
+ <!--_html_template_end_-->`;
+   // clang-format on
+diff --git a/chrome/browser/resources/omnibox_popup/omnibox_popup_full.html b/chrome/browser/resources/omnibox_popup/omnibox_popup_full.html
+index 06390d2..658c29f 100644
+--- a/chrome/browser/resources/omnibox_popup/omnibox_popup_full.html
++++ b/chrome/browser/resources/omnibox_popup/omnibox_popup_full.html
+@@ -16,7 +16,8 @@
+     }
+ 
+     body {
+-      background-color: var(--color-omnibox-results-background);
++      background-color: color-mix(
++          in srgb, var(--color-omnibox-results-background) 70%, #08090a);
+       height: auto;
+       margin: 0;
+     }
+diff --git a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.css b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.css
+index 8176abf..2cb1788 100644
+--- a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.css
++++ b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.css
+@@ -11,19 +11,30 @@
+  * #css_wrapper_metadata_end */
+ 
+ :host {
+-  --cr-searchbox-icon-left-position: 5px;
++  --zenium-popup-background: color-mix(
++      in srgb, var(--color-omnibox-results-background) 70%, #08090a);
++  --zenium-popup-hover: color-mix(
++      in srgb, var(--zenium-popup-background) 90%, white);
++  --zenium-popup-selected: color-mix(
++      in srgb, var(--zenium-popup-background) 84%, white);
++  --color-searchbox-background: var(--zenium-popup-background);
++  --color-searchbox-results-background: var(--zenium-popup-background);
++  --color-searchbox-results-background-hovered: var(--zenium-popup-hover);
++  --color-searchbox-results-background-selected: var(--zenium-popup-selected);
++  --cr-searchbox-icon-left-position: 10px;
+   --cr-searchbox-icon-top-position: 0;
+   --cr-searchbox-border-radius: calc(0.5 * var(--cr-searchbox-height));
+   --cr-searchbox-icon-spacing: 11px;
+   --cr-searchbox-icon-width: 26px;
+   --cr-searchbox-inner-icon-margin: 8px;
+-  --cr-searchbox-shadow: 0 4px 8px 3px rgba(0, 0, 0, 0.15),
+-      0 1px 3px 0 rgba(0, 0, 0, 0.30);
++  --cr-searchbox-match-font-weight: 400;
++  --cr-searchbox-match-padding: 8px;
++  --cr-searchbox-shadow: none;
+   --cr-searchbox-voice-icon-offset: 16px;
+   --cr-searchbox-voice-search-button-width: 0px;
+ 
+   --cr-searchbox-width: calc(100% - 2 * var(--alignment-inset-horizontal));
+-  --cr-searchbox-height: calc(var(--location-bar-height) + 2 * var(--alignment-inset-top));
++  --cr-searchbox-height: 50px;
+   border-radius: var(--cr-searchbox-border-radius);
+   display: block;
+   font-size: var(--cr-searchbox-font-size, 16px);
+@@ -58,7 +69,7 @@
+ }
+ 
+ :host([searchbox-chrome-refresh-theming][dropdown-is-visible]) {
+-  --cr-searchbox-shadow: 0 0 12px 4px var(--color-searchbox-shadow);
++  --cr-searchbox-shadow: none;
+ }
+ 
+ :host([searchbox-chrome-refresh-theming]:not([searchbox-steady-state-shadow]):not([dropdown-is-visible])) {
+@@ -89,14 +100,15 @@
+ 
+ :host(:not([dropdown-is-visible])) #inputWrapper:focus-within {
+   /* Transparent border so that there is no shift. */
+-  border: 1px solid transparent;
+-  box-shadow: inset 0 0 0 2px var(--cr-focus-outline-color);
++  border: 1px solid color-mix(
++      in srgb, var(--zenium-popup-background) 68%, white);
++  box-shadow: none;
+ }
+ 
+ /* TODO(b/511199705): Widget is too wide when dropdown is visible. This is a
+    workaround until we fix that. */
+ :host([dropdown-is-visible]) {
+-  --cr-searchbox-border-radius: 16px;
++  --cr-searchbox-border-radius: 12px;
+   --cr-searchbox-width: 100%;
+ }
+ 
+@@ -125,7 +137,7 @@
+ }
+ 
+ #inputWrapper {
+-  background-color: var(--color-searchbox-background);
++  background-color: var(--zenium-popup-background);
+   border-radius: var(--cr-searchbox-border-radius);
+   box-shadow: var(--cr-searchbox-shadow);
+   display: flex;
+@@ -139,7 +151,7 @@
+ cr-searchbox-input::part(searchbox-input) {
+   align-self: center;
+   height: var(--cr-searchbox-input-height);
+-  padding-top: 2px;
++  padding-top: 0;
+ }
+ 
+ :host([searchbox-chrome-refresh-theming]) cr-searchbox-input::part(searchbox-input)::selection {
+@@ -223,13 +235,14 @@ cr-searchbox-input::part(icon) {
+ }
+ 
+ cr-searchbox-dropdown::part(dropdown-content) {
+-  background-color: unset;
++  background-color: var(--zenium-popup-background);
+   border-radius: 0;
+   box-shadow: unset;
+   gap: unset;
+   margin-bottom: unset;
+   overflow: unset;
+-  padding-top: unset;
++  padding-bottom: 8px;
++  padding-top: 2px;
+ }
+ 
+ .searchbox-icon-button-container.lens {
+diff --git a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts
+index 2e84681..ae334b6 100644
+--- a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts
++++ b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts
+@@ -559,6 +559,14 @@ export class OmniboxPopupSearchboxElement extends
+     // override.
+     super.onInputWrapperFocusout(e);
+     this.$.input.blur();
++
++    // The full omnibox lives in its own widget, so blurring its WebUI does not
++    // automatically dismiss that widget. Close only when focus leaves this
++    // searchbox entirely; transitions into its dropdown must remain usable.
++    const nextTarget = e.relatedTarget as Node | null;
++    if (!nextTarget || !this.shadowRoot.contains(nextTarget)) {
++      this.popupPageHandler_.closeUI();
++    }
+   }
+ 
+   protected onVoiceSearchClick_() {
+diff --git a/chrome/browser/ui/omnibox/chrome_omnibox_client.cc b/chrome/browser/ui/omnibox/chrome_omnibox_client.cc
+index 212395c..dc7bbef 100644
+--- a/chrome/browser/ui/omnibox/chrome_omnibox_client.cc
++++ b/chrome/browser/ui/omnibox/chrome_omnibox_client.cc
+@@ -913,6 +913,15 @@ void ChromeOmniboxClient::OnAutocompleteAccept(
+                     {header.first, ": ", header.second, "\r\n"});
+   }
+ 
++  if (disposition == WindowOpenDisposition::CURRENT_TAB && browser_) {
++    if (BrowserView* browser_view =
++            BrowserView::GetBrowserViewForBrowser(browser_);
++        browser_view && browser_view->IsZeniumNewTabOmniboxActive()) {
++      disposition = WindowOpenDisposition::NEW_FOREGROUND_TAB;
++      browser_view->ClearZeniumNewTabOmnibox();
++    }
++  }
++
+   // Store the details necessary to open the omnibox match via browser commands.
+   location_bar_->set_navigation_params(LocationBar::NavigationParams(
+       destination_url, disposition, transition, match_selection_timestamp,
+diff --git a/chrome/browser/ui/omnibox/omnibox_next_features.cc b/chrome/browser/ui/omnibox/omnibox_next_features.cc
+index fc07c7a..262d4a7 100644
+--- a/chrome/browser/ui/omnibox/omnibox_next_features.cc
++++ b/chrome/browser/ui/omnibox/omnibox_next_features.cc
+@@ -75,7 +75,7 @@ BASE_FEATURE(kWebUIOmniboxAimPopupDisableAnimation, DISABLED);
+ // If enabled, then both the input row and suggestions dropdown (in the Omnibox)
+ // will be rendered using the WebUI stack (i.e. the cutout for the location bar
+ // will be removed).
+-BASE_FEATURE(kWebUIOmniboxFullPopup, DISABLED);
++BASE_FEATURE(kWebUIOmniboxFullPopup, ENABLED);
+ // Enables the double click mechanism of sending selection set by
+ // passing click events through the WebView.
+ BASE_FEATURE(kWebUIOmniboxFullPopupDoubleClick, ENABLED);
+diff --git a/chrome/browser/ui/views/frame/browser_view.cc b/chrome/browser/ui/views/frame/browser_view.cc
+index 63578e8..6ffeeb0 100644
 --- a/chrome/browser/ui/views/frame/browser_view.cc
 +++ b/chrome/browser/ui/views/frame/browser_view.cc
-@@ -2144,6 +2144,25 @@ bool IsOpenBubbleAnchoredInViewSubtree(views::Widget* widget,
+@@ -1452,9 +1452,9 @@ bool BrowserView::GetTabStripVisible() const {
+ }
+ 
+ bool BrowserView::ShouldDrawTabStrokes() const {
+-#if BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX)
+   return false;
+-#else   // BUILDFLAG(IS_CHROMEOS)
++#else   // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX)
+ 
+   if (web_app::AppBrowserController::From(browser()) &&
+       !web_app::AppBrowserController::From(browser())->has_tab_strip()) {
+@@ -2023,6 +2023,12 @@ void BrowserView::UpdateZenModeReveal(bool reveal_top, bool reveal_side) {
+     }
+   }
+ 
++  // The full omnibox popup owns focus in a separate widget. Keep its sidebar
++  // visible just as we do while the native location bar itself has focus.
++  if (zenium_omnibox_popup_open_ && toolbar_in_side_chrome) {
++    reveal_side = true;
++  }
++
+   // Keep the top chrome visible while a bubble/popup anchored inside the top
+   // container or a side panel is open.
+   if (!reveal_top && HasOpenBubbleFromTopContainer()) {
+@@ -2144,6 +2150,25 @@ bool IsOpenBubbleAnchoredInViewSubtree(views::Widget* widget,
    return anchor_view && anchor_root->Contains(anchor_view);
  }
  
@@ -26,7 +242,7 @@
  bool IsSidePanelOpen(const SidePanel* side_panel) {
    if (!side_panel) {
      return false;
-@@ -2168,6 +2187,12 @@ bool BrowserView::HasOpenBubbleFromTopContainer() const {
+@@ -2168,6 +2193,12 @@ bool BrowserView::HasOpenBubbleFromTopContainer() const {
    if (!top_container_ || !GetWidget()) {
      return false;
    }
@@ -39,7 +255,7 @@
    for (views::Widget* widget :
         views::Widget::GetAllOwnedWidgets(GetWidget()->GetNativeView())) {
      if (IsOpenBubbleAnchoredInViewSubtree(widget, top_container_)) {
-@@ -2181,6 +2206,9 @@ bool BrowserView::HasOpenBubbleFromSideChrome() const {
+@@ -2181,6 +2212,9 @@ bool BrowserView::HasOpenBubbleFromSideChrome() const {
    if (!vertical_tab_strip_region_view_ || !GetWidget()) {
      return false;
    }
@@ -49,6 +265,76 @@
    for (views::Widget* widget :
         views::Widget::GetAllOwnedWidgets(GetWidget()->GetNativeView())) {
      if (IsOpenBubbleAnchoredInViewSubtree(widget,
+@@ -3003,6 +3037,37 @@ LocationBar* BrowserView::GetLocationBar() const {
+   return toolbar_ ? toolbar_->location_bar() : nullptr;
+ }
+ 
++void BrowserView::ShowZeniumNewTabOmnibox() {
++  if (!IsToolbarInVerticalSidebar()) {
++    chrome::NewTab(browser_, NewTabTypes::kNewTabButton);
++    return;
++  }
++
++  zenium_new_tab_omnibox_active_ = true;
++  SetFocusToLocationBar(/*is_user_initiated=*/true);
++  if (LocationBar* location_bar = GetLocationBar()) {
++    location_bar->GetOmniboxView()->SetUserText(std::u16string());
++  }
++}
++
++void BrowserView::SetZeniumOmniboxPopupOpen(bool open) {
++  if (zenium_omnibox_popup_open_ == open) {
++    return;
++  }
++
++  zenium_omnibox_popup_open_ = open;
++  if (!zen_mode_enabled_) {
++    return;
++  }
++
++  if (open && IsToolbarInVerticalSidebar()) {
++    zen_cursor_exit_timer_.Stop();
++    UpdateZenModeReveal(/*reveal_top=*/false, /*reveal_side=*/true);
++  } else {
++    UpdateZenModeRevealFromCursor();
++  }
++}
++
+ void BrowserView::SetFocusToLocationBar(bool is_user_initiated) {
+   // On Windows, changing focus to the location bar causes the browser window to
+   // become active. This can steal focus if the user has another window open
+diff --git a/chrome/browser/ui/views/frame/browser_view.h b/chrome/browser/ui/views/frame/browser_view.h
+index 9b802d6..694ed65 100644
+--- a/chrome/browser/ui/views/frame/browser_view.h
++++ b/chrome/browser/ui/views/frame/browser_view.h
+@@ -367,6 +367,15 @@ class BrowserView : public BrowserWindow,
+   // Returns whether the navigation toolbar is hosted by the vertical sidebar.
+   bool IsToolbarInVerticalSidebar() const;
+ 
++  // Opens the vertical sidebar's New Tab search as a centered omnibox popup.
++  // Navigations accepted from this mode open in a new foreground tab.
++  void ShowZeniumNewTabOmnibox();
++  bool IsZeniumNewTabOmniboxActive() const {
++    return zenium_new_tab_omnibox_active_;
++  }
++  void ClearZeniumNewTabOmnibox() { zenium_new_tab_omnibox_active_ = false; }
++  void SetZeniumOmniboxPopupOpen(bool open);
++
+   // Returns whether the webapp frame toolbar should be drawn.
+   bool ShouldDrawWebAppFrameToolbar() const;
+ 
+@@ -1456,6 +1465,9 @@ class BrowserView : public BrowserWindow,
+ 
+   base::CallbackListSubscription zenium_layout_subscription_;
+ 
++  bool zenium_new_tab_omnibox_active_ = false;
++  bool zenium_omnibox_popup_open_ = false;
++
+   base::CallbackListSubscription vertical_tab_subscription_;
+ 
+   std::unique_ptr<tabs::VerticalTabStripStateController::ScopedEnableStateLock>
+diff --git a/chrome/browser/ui/views/frame/vertical_tab_strip_region_view.cc b/chrome/browser/ui/views/frame/vertical_tab_strip_region_view.cc
+index ed939d8..d7a1b47 100644
 --- a/chrome/browser/ui/views/frame/vertical_tab_strip_region_view.cc
 +++ b/chrome/browser/ui/views/frame/vertical_tab_strip_region_view.cc
 @@ -301,7 +301,7 @@ void VerticalTabStripRegionView::SetZenModeFloatingStyleForLayout(
@@ -60,7 +346,7 @@
    UpdateInteriorMargin();
  
    auto* const background =
-@@ -1138,6 +1138,14 @@ void VerticalTabStripRegionView::OnOmniboxPopupVisibilityChanged(bool is_open) {
+@@ -1137,6 +1137,14 @@ void VerticalTabStripRegionView::OnOmniboxPopupVisibilityChanged(bool is_open) {
    } else {
      omnibox_open_lock_.reset();
    }
@@ -75,9 +361,25 @@
  }
  
  void VerticalTabStripRegionView::OnActiveTabChanged(
+diff --git a/chrome/browser/ui/views/location_bar/location_bar_view.cc b/chrome/browser/ui/views/location_bar/location_bar_view.cc
+index 175db43..493714a 100644
 --- a/chrome/browser/ui/views/location_bar/location_bar_view.cc
 +++ b/chrome/browser/ui/views/location_bar/location_bar_view.cc
-@@ -2084,6 +2084,16 @@ void LocationBarView::OnOmniboxFocused() {
+@@ -273,6 +273,13 @@ LocationBarView::LocationBarView(Browser* browser,
+             return false;
+           }
+ 
++          // The full popup supplies the active border around its own real
++          // input surface. Avoid leaving a second blue ring on the sidebar's
++          // synchronized location bar underneath it.
++          if (base::FeatureList::IsEnabled(omnibox::kWebUIOmniboxFullPopup)) {
++            return false;
++          }
++
+           // Show focus ring when the Omnibox is visibly focused and the popup
+           // is closed.
+           return v->GetOmniboxController()->edit_model()->is_caret_visible() &&
+@@ -2084,6 +2091,16 @@ void LocationBarView::OnOmniboxFocused() {
    // the omnibox is intentional, snapping is better than transitioning here.
    hover_animation_.Reset();
    RefreshBackground();
@@ -94,7 +396,7 @@
  
    // The AI mode page action icon view should only be visible when the omnibox
    // is focused, so if there is a change in focus, refresh the icon.
-@@ -2104,6 +2114,16 @@ void LocationBarView::OnOmniboxBlurred() {
+@@ -2104,6 +2121,16 @@ void LocationBarView::OnOmniboxBlurred() {
      views::FocusRing::Get(this)->Refresh();
    }
    RefreshBackground();
@@ -111,20 +413,230 @@
  
    // The AI mode page action icon view should only be visible when the omnibox
    // is focused, so if there is a change in focus, refresh the icon.
+diff --git a/chrome/browser/ui/views/omnibox/full_webui_omnibox_frame.cc b/chrome/browser/ui/views/omnibox/full_webui_omnibox_frame.cc
+index ad3a36d..839f29a 100644
+--- a/chrome/browser/ui/views/omnibox/full_webui_omnibox_frame.cc
++++ b/chrome/browser/ui/views/omnibox/full_webui_omnibox_frame.cc
+@@ -67,6 +67,7 @@ void FullWebUIOmniboxFrame::SetElevation(int elevation) {
+       views::BubbleBorder::Arrow::NONE,
+       views::BubbleBorder::Shadow::STANDARD_SHADOW);
+   border->set_rounded_corners(gfx::RoundedCornersF(corner_radius));
++  border->set_draw_border_stroke(true);
+   border->set_md_shadow_elevation(elevation);
+   SetBorder(std::move(border));
+ }
+diff --git a/chrome/browser/ui/views/omnibox/omnibox_full_popup_webui_content.cc b/chrome/browser/ui/views/omnibox/omnibox_full_popup_webui_content.cc
+index c978dc9..8836037 100644
+--- a/chrome/browser/ui/views/omnibox/omnibox_full_popup_webui_content.cc
++++ b/chrome/browser/ui/views/omnibox/omnibox_full_popup_webui_content.cc
+@@ -37,6 +37,10 @@ bool OmniboxFullPopupWebUIContent::EscClosesUI() const {
+ }
+ 
+ void OmniboxFullPopupWebUIContent::CloseUI() {
++  // A floating omnibox is an editing surface over the current page. If it is
++  // dismissed without accepting a match, restore the page's permanent address
++  // instead of leaving the canceled draft mirrored in the sidebar.
++  location_bar()->Revert();
+   controller()->client()->FocusWebContents();
+   controller()->edit_model()->OnKillFocus();
+ 
+diff --git a/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.cc b/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.cc
+index e95027e..b6d0f4f 100644
+--- a/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.cc
++++ b/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.cc
+@@ -10,6 +10,7 @@
+ #include "base/metrics/histogram_functions.h"
+ #include "base/scoped_observation.h"
+ #include "base/strings/strcat.h"
++#include "chrome/browser/ui/browser.h"
+ #include "chrome/browser/ui/location_bar/location_bar.h"
+ #include "chrome/browser/ui/omnibox/omnibox_controller.h"
+ #include "chrome/browser/ui/omnibox/omnibox_edit_model.h"
+@@ -17,6 +18,7 @@
+ #include "chrome/browser/ui/omnibox/omnibox_popup_state_manager.h"
+ #include "chrome/browser/ui/omnibox/omnibox_popup_view.h"
+ #include "chrome/browser/ui/omnibox/omnibox_view.h"
++#include "chrome/browser/ui/views/frame/browser_view.h"
+ #include "chrome/browser/ui/views/omnibox/full_webui_omnibox_frame.h"
+ #include "chrome/browser/ui/views/omnibox/omnibox_full_popup_webui_content.h"
+ #include "chrome/browser/ui/views/omnibox/omnibox_popup_presenter_base.h"
+@@ -33,6 +35,20 @@
+ #include "ui/views/focus/focus_manager.h"
+ #include "ui/views/view_utils.h"
+ 
++namespace {
++
++constexpr int kZeniumSidebarPopupWidth = 520;
++constexpr int kZeniumCenteredPopupWidth = 820;
++constexpr int kZeniumPopupWindowMargin = 24;
++
++BrowserView* GetBrowserView(LocationBar* location_bar) {
++  return location_bar && location_bar->GetBrowser()
++             ? BrowserView::GetBrowserViewForBrowser(location_bar->GetBrowser())
++             : nullptr;
++}
++
++}  // namespace
++
+ OmniboxPopupFullPresenter::OmniboxPopupFullPresenter(
+     LocationBar* location_bar,
+     OmniboxPopupPresenterDelegate& presenter_delegate,
+@@ -47,6 +63,13 @@ OmniboxPopupFullPresenter::~OmniboxPopupFullPresenter() = default;
+ void OmniboxPopupFullPresenter::Show() {
+   const bool was_shown = IsShown();
+   OmniboxPopupPresenterBase::Show();
++  if (BrowserView* browser_view = GetBrowserView(location_bar())) {
++    browser_view->SetZeniumOmniboxPopupOpen(true);
++  }
++  // Placement can change while the popup is already visible (for example,
++  // clicking New Tab while editing the address). The base presenter skips
++  // layout in that case, so synchronize explicitly.
++  SynchronizePopupBounds();
+   if (!was_shown) {
+     // Set the request time to now when the popup is first shown. This ensures
+     // that latency is measured from the user interaction to show, even if the
+@@ -93,6 +116,34 @@ void OmniboxPopupFullPresenter::Show() {
+ void OmniboxPopupFullPresenter::Hide() {
+   forward_events_timer_.Stop();
+   OmniboxPopupPresenterBase::Hide();
++  const bool popup_still_shown = IsShown();
++  if (BrowserView* browser_view = GetBrowserView(location_bar())) {
++    // UI DevTools can intentionally suppress a Widget::Hide() call. Keep the
++    // sidebar reveal lock synchronized with the actual native popup instead of
++    // letting a still-visible floating surface outlive its sidebar.
++    browser_view->SetZeniumOmniboxPopupOpen(popup_still_shown);
++    if (!popup_still_shown) {
++      browser_view->ClearZeniumNewTabOmnibox();
++    }
++  }
++}
++
++int OmniboxPopupFullPresenter::GetWebUIContentWidth(
++    int location_bar_width) const {
++  BrowserView* browser_view = GetBrowserView(location_bar());
++  if (!browser_view || !browser_view->IsToolbarInVerticalSidebar()) {
++    return OmniboxPopupPresenterBase::GetWebUIContentWidth(location_bar_width);
++  }
++
++  int popup_width = kZeniumSidebarPopupWidth;
++  if (browser_view->IsZeniumNewTabOmniboxActive()) {
++    const gfx::Rect window_bounds =
++        browser_view->GetWidgetForAnchoring()->GetWindowBoundsInScreen();
++    popup_width = std::min(
++        kZeniumCenteredPopupWidth,
++        std::max(0, window_bounds.width() - 2 * kZeniumPopupWindowMargin));
++  }
++  return std::max(popup_width, get_minimum_size().width());
+ }
+ 
+ void OmniboxPopupFullPresenter::RequestFocus() {
+@@ -166,6 +217,21 @@ void OmniboxPopupFullPresenter::SynchronizePopupBounds() {
+   widget_bounds.Inset(
+       -RoundedOmniboxResultsFrame::GetLocationBarAlignmentInsets());
+ 
++  BrowserView* browser_view = GetBrowserView(location_bar());
++  const bool is_vertical_sidebar =
++      browser_view && browser_view->IsToolbarInVerticalSidebar();
++  const bool is_centered_new_tab =
++      is_vertical_sidebar && browser_view->IsZeniumNewTabOmniboxActive();
++  if (is_vertical_sidebar) {
++    widget_bounds.set_width(
++        GetWebUIContentWidth(location_bar()->BoundsInScreen().width()));
++    if (!is_centered_new_tab &&
++        browser_view->IsVerticalTabStripRightAligned()) {
++      widget_bounds.set_x(location_bar()->BoundsInScreen().right() -
++                          widget_bounds.width());
++    }
++  }
++
+   const int default_height = widget_bounds.height();
+   bool has_results = content_height_ > default_height;
+   int target_elevation =
+@@ -188,11 +254,23 @@ void OmniboxPopupFullPresenter::SynchronizePopupBounds() {
+       std::max(get_minimum_size().height(), widget_bounds.height()));
+ 
+   widget_bounds.Inset(-results_frame->GetInsets());
++  if (is_centered_new_tab) {
++    const gfx::Rect window_bounds =
++        browser_view->GetWidgetForAnchoring()->GetWindowBoundsInScreen();
++    widget_bounds.set_origin(gfx::Point(
++        window_bounds.x() + (window_bounds.width() - widget_bounds.width()) / 2,
++        window_bounds.y() +
++            (window_bounds.height() - widget_bounds.height()) / 2));
++  }
+   GetWidget()->SetBounds(widget_bounds);
+ }
+ 
+ void OmniboxPopupFullPresenter::WidgetDestroyed() {
+   forward_events_timer_.Stop();
++  if (BrowserView* browser_view = GetBrowserView(location_bar())) {
++    browser_view->SetZeniumOmniboxPopupOpen(false);
++    browser_view->ClearZeniumNewTabOmnibox();
++  }
+   // Update the popup state manager if widget was destroyed externally, e.g., by
+   // the OS. This ensures the popup state manager stays in sync.
+   if (controller()->popup_state_manager()->popup_state() ==
+diff --git a/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.h b/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.h
+index b6953e8..36c6f7f 100644
+--- a/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.h
++++ b/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.h
+@@ -30,6 +30,7 @@ class OmniboxPopupFullPresenter : public OmniboxPopupPresenterBase {
+   // OmniboxPopupPresenterBase:
+   void Show() override;
+   void Hide() override;
++  int GetWebUIContentWidth(int location_bar_width) const override;
+   // Requests activation of the popup widget and focuses the WebUI content,
+   // while clearing stored focus on the container widget to prevent stealing
+   // focus back from the WebUI input field.
+diff --git a/chrome/browser/ui/views/omnibox/omnibox_popup_presenter_base.cc b/chrome/browser/ui/views/omnibox/omnibox_popup_presenter_base.cc
+index 24dbec2..58b0a3e 100644
+--- a/chrome/browser/ui/views/omnibox/omnibox_popup_presenter_base.cc
++++ b/chrome/browser/ui/views/omnibox/omnibox_popup_presenter_base.cc
+@@ -304,6 +304,14 @@ void OmniboxPopupPresenterBase::SynchronizePopupBounds() {
+   }
+ }
+ 
++int OmniboxPopupPresenterBase::GetWebUIContentWidth(
++    int location_bar_width) const {
++  const int width =
++      location_bar_width +
++      RoundedOmniboxResultsFrame::GetLocationBarAlignmentInsets().width();
++  return std::max(width, get_minimum_size().width());
++}
++
+ views::View* OmniboxPopupPresenterBase::GetUIContainer() const {
+   if (owned_omnibox_popup_webui_container_) {
+     return owned_omnibox_popup_webui_container_.get();
+diff --git a/chrome/browser/ui/views/omnibox/omnibox_popup_presenter_base.h b/chrome/browser/ui/views/omnibox/omnibox_popup_presenter_base.h
+index b7e06eb..e3ad56d 100644
+--- a/chrome/browser/ui/views/omnibox/omnibox_popup_presenter_base.h
++++ b/chrome/browser/ui/views/omnibox/omnibox_popup_presenter_base.h
+@@ -73,6 +73,10 @@ class OmniboxPopupPresenterBase : public content::WebContentsObserver,
+   // Synchronize the popup widget's bounds to its anchor (location bar view).
+   virtual void SynchronizePopupBounds();
+ 
++  // Returns the width the embedded WebUI should render at. Most popup modes
++  // track the location bar; floating full-popup modes may be wider.
++  virtual int GetWebUIContentWidth(int location_bar_width) const;
++
+   // Returns the currently "active" Popup content, whichever one is visible or
+   // going to be visible within the popup.
+   OmniboxPopupWebUIBaseContent* GetWebUIContent() const;
+diff --git a/chrome/browser/ui/views/omnibox/omnibox_popup_view_views.cc b/chrome/browser/ui/views/omnibox/omnibox_popup_view_views.cc
+index ce4433f..e7dc1f3 100644
 --- a/chrome/browser/ui/views/omnibox/omnibox_popup_view_views.cc
 +++ b/chrome/browser/ui/views/omnibox/omnibox_popup_view_views.cc
-@@ -751,7 +751,9 @@ gfx::Rect OmniboxPopupViewViews::GetTargetBounds() const {
+@@ -751,7 +751,8 @@ gfx::Rect OmniboxPopupViewViews::GetTargetBounds() const {
    popup_height += RoundedOmniboxResultsFrame::GetNonResultSectionHeight();
  
    // The rounded popup is always offset the same amount from the omnibox.
 -  gfx::Rect content_rect = location_bar_view_->GetBoundsInScreen();
-+  const gfx::Rect location_bar_bounds =
-+      location_bar_view_->GetBoundsInScreen();
++  const gfx::Rect location_bar_bounds = location_bar_view_->GetBoundsInScreen();
 +  gfx::Rect content_rect = location_bar_bounds;
    content_rect.Inset(
        -RoundedOmniboxResultsFrame::GetLocationBarAlignmentInsets());
    content_rect.set_height(popup_height);
-@@ -768,12 +770,17 @@ gfx::Rect OmniboxPopupViewViews::GetTargetBounds() const {
+@@ -768,12 +769,15 @@ gfx::Rect OmniboxPopupViewViews::GetTargetBounds() const {
      const int popup_width =
          std::min(kZeniumVerticalOmniboxPopupWidth, available_width);
      content_rect.set_width(std::max(content_rect.width(), popup_width));
@@ -141,13 +653,37 @@
 +        RoundedOmniboxResultsFrame::GetLocationBarAlignmentInsets();
 +    content_rect.set_x(browser_view->IsVerticalTabStripRightAligned()
 +                           ? location_bar_bounds.right() +
-+                                 alignment_insets.right() -
-+                                 content_rect.width()
-+                           : location_bar_bounds.x() -
-+                                 alignment_insets.left());
++                                 alignment_insets.right() - content_rect.width()
++                           : location_bar_bounds.x() - alignment_insets.left());
    }
  
    if (omnibox::IsWebUIOmniboxPopupEnabled() &&
+diff --git a/chrome/browser/ui/views/omnibox/omnibox_popup_webui_base_content.cc b/chrome/browser/ui/views/omnibox/omnibox_popup_webui_base_content.cc
+index 0f91917..fc58882 100644
+--- a/chrome/browser/ui/views/omnibox/omnibox_popup_webui_base_content.cc
++++ b/chrome/browser/ui/views/omnibox/omnibox_popup_webui_base_content.cc
+@@ -89,13 +89,12 @@ void OmniboxPopupWebUIBaseContent::OnLocationBarBoundsChanged() {
+   is_window_resizing_ = (location_bar_width != last_location_bar_width_);
+   last_location_bar_width_ = location_bar_width;
+ 
+-  int width =
+-      location_bar_width +
+-      RoundedOmniboxResultsFrame::GetLocationBarAlignmentInsets().width();
+-
+-  if (popup_presenter_) {
+-    width = std::max(width, popup_presenter_->get_minimum_size().width());
+-  }
++  const int width =
++      popup_presenter_
++          ? popup_presenter_->GetWebUIContentWidth(location_bar_width)
++          : location_bar_width +
++                RoundedOmniboxResultsFrame::GetLocationBarAlignmentInsets()
++                    .width();
+ 
+   // Update the auto-resize limits for WebUI so that the WebUI updates
+   // immediately. If deferred, WebUI content relying on '100%' would render
+diff --git a/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.cc b/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.cc
+index 6f55d5e..7541102 100644
 --- a/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.cc
 +++ b/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.cc
 @@ -164,6 +164,18 @@ class TopBackgroundView : public views::View {
@@ -178,7 +714,15 @@
          SkBlendMode::kSrc, false));
    }
  
-@@ -218,6 +230,7 @@ class TopBackgroundView : public views::View {
+@@ -181,7 +193,6 @@ class TopBackgroundView : public views::View {
+   // for the omnibox to the proper Widgets/Views. For Aura platforms, this is
+   // done with an event targeter set up in
+   // RoundedOmniboxResultsFrame::AddedToWidget(), below.
+- private:
+   // Note that mouse moved events can be dispatched through OnMouseEvent, but
+   // RootView directly calls OnMouseMoved as well, so override OnMouseMoved as
+   // well to catch 'em all.
+@@ -219,6 +230,7 @@ class TopBackgroundView : public views::View {
  
   private:
    raw_ptr<const LocationBar> location_bar_;
@@ -186,93 +730,68 @@
  };
  
  BEGIN_METADATA(TopBackgroundView)
+diff --git a/chrome/browser/ui/views/tabs/vertical/vertical_new_tab_button.cc b/chrome/browser/ui/views/tabs/vertical/vertical_new_tab_button.cc
+index d33d2e7..f2a5278 100644
+--- a/chrome/browser/ui/views/tabs/vertical/vertical_new_tab_button.cc
++++ b/chrome/browser/ui/views/tabs/vertical/vertical_new_tab_button.cc
+@@ -4,8 +4,12 @@
+ 
+ #include "chrome/browser/ui/views/tabs/vertical/vertical_new_tab_button.h"
+ 
++#include "base/functional/bind.h"
++#include "chrome/browser/ui/browser_commands.h"
+ #include "chrome/browser/ui/color/chrome_color_id.h"
+ #include "chrome/browser/ui/layout_constants.h"
++#include "chrome/browser/ui/tabs/tab_enums.h"
++#include "chrome/browser/ui/views/frame/browser_view.h"
+ #include "chrome/grit/generated_resources.h"
+ #include "ui/base/l10n/l10n_util.h"
+ #include "ui/base/metadata/metadata_impl_macros.h"
+@@ -23,6 +27,16 @@ VerticalNewTabButton::VerticalNewTabButton(BrowserWindowInterface* browser)
+           browser,
+           GetLayoutConstant(LayoutConstant::kVerticalTabStripNewTabButtonSize),
+           kIconSize) {
++  SetCallback(base::BindRepeating(
++      [](BrowserWindowInterface* browser, const ui::Event&) {
++        if (BrowserView* browser_view =
++                BrowserView::GetBrowserViewForBrowser(browser)) {
++          browser_view->ShowZeniumNewTabOmnibox();
++          return;
++        }
++        chrome::NewTab(browser, NewTabTypes::kNewTabButton);
++      },
++      base::Unretained(browser)));
+   SetCornerRadius(GetLayoutConstant(LayoutConstant::kVerticalTabCornerRadius));
+   SetForegroundColorId(kColorToolbarButtonIconDisabled);
+   SetHorizontalAlignment(gfx::HorizontalAlignment::ALIGN_LEFT);
+diff --git a/chrome/browser/ui/views/toolbar/toolbar_view.cc b/chrome/browser/ui/views/toolbar/toolbar_view.cc
+index 5082f60..5dac994 100644
 --- a/chrome/browser/ui/views/toolbar/toolbar_view.cc
 +++ b/chrome/browser/ui/views/toolbar/toolbar_view.cc
-@@ -84,6 +84,7 @@
- #include "chrome/browser/ui/views/location_bar/intent_chip_button.h"
- #include "chrome/browser/ui/views/location_bar/star_view.h"
- #include "chrome/browser/ui/views/location_bar/webui_location_bar.h"
-+#include "chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.h"
- #include "chrome/browser/ui/views/page_action/page_action_container_view.h"
- #include "chrome/browser/ui/views/page_action/page_action_icon_container.h"
- #include "chrome/browser/ui/views/page_action/page_action_icon_controller.h"
-@@ -195,6 +196,8 @@ constexpr int kVerticalSidebarHorizontalPadding = 6;
- constexpr int kVerticalSidebarRowGap = 4;
- constexpr int kVerticalSidebarLocationBarHeight = 36;
- constexpr int kVerticalSidebarMinimumLocationBarWidth = 120;
-+constexpr int kZeniumVerticalOmniboxPopupWidth = 520;
-+constexpr int kZeniumVerticalOmniboxPopupMargin = 8;
- 
- constexpr int kDynamicNewTabButtonIconSize = 16;
- 
-@@ -280,10 +283,12 @@ class CenteredLocationBarLayout : public views::FlexLayout {
- 
-   CenteredLocationBarLayout(views::View* location_bar,
-                             GetCenteredBoundsCallback callback,
--                            IsVerticalSidebarCallback vertical_sidebar_callback)
-+                            IsVerticalSidebarCallback vertical_sidebar_callback,
-+                            BrowserView* browser_view)
-       : location_bar_(location_bar),
-         callback_(std::move(callback)),
--        vertical_sidebar_callback_(std::move(vertical_sidebar_callback)) {}
-+        vertical_sidebar_callback_(std::move(vertical_sidebar_callback)),
-+        browser_view_(browser_view) {}
- 
-   CenteredLocationBarLayout(const CenteredLocationBarLayout&) = delete;
-   CenteredLocationBarLayout& operator=(const CenteredLocationBarLayout&) =
-@@ -324,18 +329,39 @@ class CenteredLocationBarLayout : public views::FlexLayout {
+@@ -324,7 +324,7 @@ class CenteredLocationBarLayout : public views::FlexLayout {
          controls_bottom = kVerticalSidebarHorizontalPadding;
        }
  
 -      const int location_bar_width =
 +      const int sidebar_location_bar_width =
            std::max(0, toolbar_width - 2 * kVerticalSidebarHorizontalPadding);
-+      int location_bar_width = sidebar_location_bar_width;
-+      int location_bar_x = kVerticalSidebarHorizontalPadding;
-+      if (location_bar_->HasFocus() && browser_view_) {
-+        const gfx::Insets alignment_insets =
-+            RoundedOmniboxResultsFrame::GetLocationBarAlignmentInsets();
-+        const gfx::Insets shadow_insets =
-+            RoundedOmniboxResultsFrame::GetShadowInsets();
-+        const int available_popup_width = std::max(
-+            0, browser_view_->width() -
-+                   2 * kZeniumVerticalOmniboxPopupMargin -
-+                   shadow_insets.width());
-+        const int expanded_location_bar_width = std::max(
-+            0, std::min(kZeniumVerticalOmniboxPopupWidth,
-+                        available_popup_width) -
-+                   alignment_insets.width());
-+        location_bar_width =
-+            std::max(location_bar_width, expanded_location_bar_width);
-+        if (browser_view_->IsVerticalTabStripRightAligned()) {
-+          location_bar_x = toolbar_width - kVerticalSidebarHorizontalPadding -
-+                           location_bar_width;
-+        }
-+      }
        const int location_bar_height =
            location_bar_->GetPreferredSize().height();
-       // LayoutManagerBase applies this value to the view itself. Base the
+@@ -332,11 +332,11 @@ class CenteredLocationBarLayout : public views::FlexLayout {
        // visibility on the available width so expanding the sidebar restores
        // the address row after it was hidden in the collapsed state.
        location_bar_layout->visible =
 -          location_bar_width >= kVerticalSidebarMinimumLocationBarWidth;
 +          sidebar_location_bar_width >= kVerticalSidebarMinimumLocationBarWidth;
        location_bar_layout->bounds =
--          gfx::Rect(kVerticalSidebarHorizontalPadding,
--                    controls_bottom + kVerticalSidebarRowGap,
-+          gfx::Rect(location_bar_x, controls_bottom + kVerticalSidebarRowGap,
-                     location_bar_width, location_bar_height);
+           gfx::Rect(kVerticalSidebarHorizontalPadding,
+                     controls_bottom + kVerticalSidebarRowGap,
+-                    location_bar_width, location_bar_height);
++                    sidebar_location_bar_width, location_bar_height);
  
        layout.host_size.set_width(toolbar_width);
-@@ -355,6 +381,7 @@ class CenteredLocationBarLayout : public views::FlexLayout {
-   const raw_ptr<views::View> location_bar_;
-   GetCenteredBoundsCallback callback_;
-   IsVerticalSidebarCallback vertical_sidebar_callback_;
-+  const raw_ptr<BrowserView> browser_view_;
- };
- 
- }  // namespace
-@@ -1702,6 +1729,16 @@ void ToolbarView::Layout(PassKey) {
+       layout.host_size.set_height(location_bar_layout->visible
+@@ -1702,6 +1702,15 @@ void ToolbarView::Layout(PassKey) {
      return;
    }
  
@@ -280,8 +799,7 @@
 +  // Wayland. Tell every bubble anchored anywhere in this toolbar which window
 +  // edge it should grow away from when the toolbar lives in the sidebar.
 +  const bool vertical_layout = IsVerticalLayout();
-+  const bool right_aligned =
-+      vertical_layout && IsVerticalTabsRightAligned();
++  const bool right_aligned = vertical_layout && IsVerticalTabsRightAligned();
 +  SetProperty(views::kBubbleAnchorToLeftEdgeKey,
 +              vertical_layout && !right_aligned);
 +  SetProperty(views::kBubbleAnchorToRightEdgeKey, right_aligned);
@@ -289,16 +807,8 @@
    if (display_mode_ == DisplayMode::kCustomTab) {
      custom_tab_bar_->SetBounds(0, 0, width(),
                                 custom_tab_bar_->GetPreferredSize().height());
-@@ -1812,7 +1849,8 @@ void ToolbarView::InitLayout() {
-           base::BindRepeating(&ToolbarView::GetCenteredLocationBarBounds,
-                               base::Unretained(this)),
-           base::BindRepeating(&ToolbarView::IsVerticalLayout,
--                              base::Unretained(this))));
-+                              base::Unretained(this)),
-+          browser_view_));
- 
-   layout_manager_->SetOrientation(views::LayoutOrientation::kHorizontal)
-       .SetCrossAxisAlignment(views::LayoutAlignment::kCenter)
+diff --git a/ui/views/bubble/bubble_dialog_delegate_view.cc b/ui/views/bubble/bubble_dialog_delegate_view.cc
+index d263dcc..daaa534 100644
 --- a/ui/views/bubble/bubble_dialog_delegate_view.cc
 +++ b/ui/views/bubble/bubble_dialog_delegate_view.cc
 @@ -15,6 +15,7 @@
@@ -309,7 +819,7 @@
  #include "base/logging.h"
  #include "base/memory/ptr_util.h"
  #include "base/memory/raw_ptr.h"
-@@ -91,6 +92,71 @@ namespace {
+@@ -91,6 +92,70 @@ namespace {
  DEFINE_OWNED_UI_CLASS_PROPERTY_KEY(std::vector<views::BubbleDialogDelegate*>,
                                     kAnchorVector)
  
@@ -325,9 +835,8 @@
 +  return std::nullopt;
 +}
 +
-+BubbleBorder::Arrow AlignBubbleArrowHorizontally(
-+    BubbleBorder::Arrow arrow,
-+    bool align_left) {
++BubbleBorder::Arrow AlignBubbleArrowHorizontally(BubbleBorder::Arrow arrow,
++                                                 bool align_left) {
 +  if (align_left) {
 +    switch (arrow) {
 +      case BubbleBorder::TOP_RIGHT:
@@ -381,7 +890,7 @@
  std::vector<BubbleDialogDelegate*>& GetAnchorVector(View* view) {
    if (!view->GetProperty(kAnchorVector)) {
      return *(view->SetProperty(
-@@ -541,6 +607,7 @@ Widget* BubbleDialogDelegate::CreateBubbleInternal(
+@@ -541,6 +606,7 @@ Widget* BubbleDialogDelegate::CreateBubbleInternal(
    // Get the latest anchor widget from the anchor view at bubble creation time.
    if (auto* anchor_view = delegate->GetAnchorView()) {
      delegate->SetAnchorView(anchor_view);
@@ -389,6 +898,8 @@
    }
  
    Widget* const bubble_widget = CreateBubbleWidget(delegate, ownership);
+diff --git a/ui/views/view_class_properties.cc b/ui/views/view_class_properties.cc
+index 70cd8f2..2b03472 100644
 --- a/ui/views/view_class_properties.cc
 +++ b/ui/views/view_class_properties.cc
 @@ -38,6 +38,8 @@ DEFINE_OWNED_UI_CLASS_PROPERTY_KEY(gfx::Insets, kInternalPaddingKey)
@@ -400,6 +911,8 @@
  DEFINE_UI_CLASS_PROPERTY_KEY(views::Widget*, kWidgetForAnchoringKey, nullptr)
  DEFINE_OWNED_UI_CLASS_PROPERTY_KEY(BoxLayoutFlexSpecification,
                                     kBoxLayoutFlexKey)
+diff --git a/ui/views/view_class_properties.h b/ui/views/view_class_properties.h
+index d81e0be..87fc740 100644
 --- a/ui/views/view_class_properties.h
 +++ b/ui/views/view_class_properties.h
 @@ -52,6 +52,16 @@ VIEWS_EXPORT extern const ui::ClassProperty<gfx::Insets*>* const
@@ -419,4 +932,47 @@
  // A property to store the anchor widget used for anchoring a bubble dialog
  // to this view. If unset, the anchor widget is this view's containing widget.
  //
-
+diff --git a/ui/webui/resources/cr_components/searchbox/searchbox_dropdown.css b/ui/webui/resources/cr_components/searchbox/searchbox_dropdown.css
+index 9f47ed3..4f6d4b9 100644
+--- a/ui/webui/resources/cr_components/searchbox/searchbox_dropdown.css
++++ b/ui/webui/resources/cr_components/searchbox/searchbox_dropdown.css
+@@ -104,6 +104,12 @@ cr-searchbox-match:-webkit-any(:focus-within, [selected]) {
+   width: 314px;
+ }
+ 
++/* Zenium's floating omnibox is a single-column switcher. The stock top-chrome
++ * searchbox reserves a secondary column even when it has no useful content. */
++:host-context(omnibox-popup-searchbox) .secondary-side {
++  display: none;
++}
++
+ .secondary-side .header {
+   padding-inline-end: 0;
+   padding-inline-start: 0;
+diff --git a/ui/webui/resources/cr_components/searchbox/searchbox_match.css b/ui/webui/resources/cr_components/searchbox/searchbox_match.css
+index bb62940..160c246 100644
+--- a/ui/webui/resources/cr_components/searchbox/searchbox_match.css
++++ b/ui/webui/resources/cr_components/searchbox/searchbox_match.css
+@@ -76,6 +76,11 @@
+   border-end-end-radius: 24px;
+ }
+ 
++:host([is-top-chrome-searchbox_]) .container:not(.actions) {
++  border-radius: 8px;
++  margin-inline: 8px;
++}
++
+ :host-context([has-secondary-side]):host-context([can-show-secondary-side]) .container:not(.actions) {
+   margin-inline-end: 0;
+ }
+@@ -153,6 +158,10 @@
+   display: block;
+ }
+ 
++:host([is-top-chrome-searchbox_]) #focusIndicator {
++  display: none !important;
++}
++
+ :host-context(cr-searchbox-match:-webkit-any(:focus-within, [selected])) #icon {
+   --color-searchbox-search-icon-background:
+       var(--color-searchbox-results-dim-selected);
