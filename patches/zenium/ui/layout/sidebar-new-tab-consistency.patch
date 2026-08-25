@@ -1,0 +1,102 @@
+diff --git a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.css b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.css
+--- a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.css
++++ b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.css
+@@ -90,7 +90,7 @@
+ }
+ 
+ :host(:not([dropdown-is-visible])) #inputWrapper:not(:focus-within) {
+-  border: 1px solid var(--color-location-bar-border-on-mismatch);
++  border: none;
+ }
+ 
+ :host(:not([dropdown-is-visible])) #inputWrapper:hover:not(:focus-within) {
+@@ -99,9 +99,7 @@
+ }
+ 
+ :host(:not([dropdown-is-visible])) #inputWrapper:focus-within {
+-  /* Transparent border so that there is no shift. */
+-  border: 1px solid color-mix(
+-      in srgb, var(--zenium-popup-background) 68%, white);
++  border: none;
+   box-shadow: none;
+ }
+ 
+diff --git a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts
+--- a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts
++++ b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts
+@@ -444,6 +444,14 @@ export class OmniboxPopupSearchboxElement extends
+     this.selectRange(state.selection);
+     this.getDropdownElement().unselect();
+     this.pageHandler().stopAutocomplete(/*clearResult=*/ false);
++
++    // State synchronization is asynchronous. The stop above can arrive after
++    // the browser has already started New Tab zero-suggest, leaving the
++    // centered surface as an input-only box. Restart the empty focused query
++    // on the same Mojo pipe so it is guaranteed to run after that stop.
++    if (state.isFocused && state.userInputInProgress && !state.text.trim()) {
++      this.queryAutocomplete('');
++    }
+   }
+ 
+   /**
+diff --git a/chrome/browser/ui/views/frame/browser_view.cc b/chrome/browser/ui/views/frame/browser_view.cc
+--- a/chrome/browser/ui/views/frame/browser_view.cc
++++ b/chrome/browser/ui/views/frame/browser_view.cc
+@@ -3045,22 +3045,33 @@ void BrowserView::ShowZeniumNewTabOmnibox() {
+     return;
+   }
+ 
+-  zenium_new_tab_omnibox_active_ = true;
+-  SetFocusToLocationBar(/*is_user_initiated=*/true);
+   if (LocationBar* location_bar = GetLocationBar()) {
+     OmniboxController* controller = location_bar->GetOmniboxController();
+     OmniboxView* view = location_bar->GetOmniboxView();
+ 
+-    // A New Tab starts as an empty draft, independent of the active page. The
+-    // focus handoff must finish first because the full WebUI popup stops the
+-    // query it inherited from the native location bar during that transition.
++    // Clear the active page text before the focus handoff. Opening the full
++    // WebUI popup synchronizes native state immediately, so waiting until after
++    // focus can briefly restore the current URL and race with the empty draft.
+     controller->StopAutocomplete(/*clear_result=*/true);
+     view->SetUserText(std::u16string(), /*update_popup=*/false);
++
++    zenium_new_tab_omnibox_active_ = true;
++    SetFocusToLocationBar(/*is_user_initiated=*/true);
++
++    // The focus handoff can stop or replace the inherited query. Reassert the
++    // empty draft and issue the dedicated New Tab zero-suggest request once
++    // the popup owns focus.
++    controller->StopAutocomplete(/*clear_result=*/true);
++    view->SetUserText(std::u16string(), /*update_popup=*/false);
+     controller->edit_model()->StartZeroSuggestRequest(
+         /*user_clobbered_permanent_text=*/true,
+         metrics::OmniboxEventProto::OTHER);
+     location_bar->GetOmniboxPopupView()->SyncNativeStateToWebUI();
++    return;
+   }
++
++  zenium_new_tab_omnibox_active_ = true;
++  SetFocusToLocationBar(/*is_user_initiated=*/true);
+ }
+ 
+ void BrowserView::SetZeniumOmniboxPopupOpen(bool open) {
+diff --git a/components/omnibox/common/omnibox_feature_configs.cc b/components/omnibox/common/omnibox_feature_configs.cc
+--- a/components/omnibox/common/omnibox_feature_configs.cc
++++ b/components/omnibox/common/omnibox_feature_configs.cc
+@@ -657,11 +657,10 @@ OmniboxUrlSuggestionsOnFocus::OmniboxUrlSuggestionsOnFocus() {
+                                       "OnFocusMostVisitedRecencyFactor",
+                                       kMvtScoringParamRecencyFactor_Classic)
+           .Get();
+-  directly_query_history_service =
+-      base::FeatureParam<bool>(&kOmniboxUrlSuggestionsOnFocus,
+-                               "OnFocusMostVisitedDirectlyQueryHistoryService",
+-                               true)
+-          .Get();
++  // TopSites can answer the first popup request while its history-backed cache
++  // is still loading. A direct HistoryService query can return no rows on the
++  // first invocation and only work after a typed query warms the service.
++  directly_query_history_service = false;
+   // The floating New Tab is opened on demand and must be populated by the
+   // current request. Chromium's prefetch-only path intentionally updates a
+   // cache without notifying the open popup, leaving the first invocation
