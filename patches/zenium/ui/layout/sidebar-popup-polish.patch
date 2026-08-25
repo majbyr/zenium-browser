@@ -1,106 +1,57 @@
 --- a/chrome/browser/ui/views/frame/browser_view.cc
 +++ b/chrome/browser/ui/views/frame/browser_view.cc
-@@ -2046,6 +2046,19 @@
-     }
-   }
+@@ -2144,6 +2144,25 @@ bool IsOpenBubbleAnchoredInViewSubtree(views::Widget* widget,
+   return anchor_view && anchor_root->Contains(anchor_view);
+ }
  
-+  // The extensions menu is not always discoverable through the generic owned
-+  // bubble walk. Keep whichever chrome hosts its anchor visible explicitly.
-+  const bool extensions_menu_showing =
-+      toolbar_ && toolbar_->extensions_container() &&
-+      toolbar_->extensions_container()->IsExtensionsMenuShowing();
-+  if (extensions_menu_showing) {
-+    if (toolbar_in_side_chrome) {
-+      reveal_side = true;
-+    } else {
-+      reveal_top = true;
++bool HasOpenAnchoredBubbleInViewSubtree(const views::View* anchor_root) {
++  views::DialogDelegate* dialog_delegate =
++      anchor_root->GetProperty(views::kAnchoredDialogKey);
++  auto* bubble_delegate =
++      dialog_delegate ? dialog_delegate->AsBubbleDialogDelegate() : nullptr;
++  views::Widget* widget =
++      bubble_delegate ? bubble_delegate->GetWidget() : nullptr;
++  if (widget && !widget->IsClosed() && widget->IsVisible()) {
++    return true;
++  }
++
++  for (const views::View* child : anchor_root->children()) {
++    if (HasOpenAnchoredBubbleInViewSubtree(child)) {
++      return true;
 +    }
 +  }
-+
-   if (reveal_top) {
-     if (!zen_top_chrome_animation_.IsShowing()) {
-       zen_top_chrome_animation_.Show();
---- a/chrome/browser/ui/views/extensions/extensions_menu_coordinator.cc
-+++ b/chrome/browser/ui/views/extensions/extensions_menu_coordinator.cc
-@@ -14,6 +14,7 @@
- #include "chrome/browser/ui/ui_features.h"
- #include "chrome/browser/ui/views/chrome_layout_provider.h"
- #include "chrome/browser/ui/views/extensions/extensions_menu_delegate_desktop.h"
-+#include "chrome/browser/ui/views/frame/browser_view.h"
- #include "extensions/browser/permissions_manager.h"
- #include "extensions/common/extension_features.h"
- #include "ui/base/mojom/dialog_button.mojom.h"
-@@ -23,6 +24,21 @@
- #include "ui/views/view_tracker.h"
- #include "ui/views/widget/widget.h"
- 
-+namespace {
-+
-+views::BubbleBorder::Arrow GetExtensionsMenuArrow(
-+    BrowserWindowInterface* browser) {
-+  BrowserView* browser_view = BrowserView::GetBrowserViewForBrowser(
-+      browser->GetBrowserForMigrationOnly());
-+  if (browser_view && browser_view->IsToolbarInVerticalSidebar() &&
-+      !browser_view->IsVerticalTabStripRightAligned()) {
-+    return views::BubbleBorder::Arrow::TOP_LEFT;
-+  }
-+  return views::BubbleBorder::Arrow::TOP_RIGHT;
++  return false;
 +}
 +
-+}  // namespace
-+
- ExtensionsMenuCoordinator::ExtensionsMenuCoordinator(
-     BrowserWindowInterface* browser,
-     ExtensionsContainer* extensions_container)
-@@ -83,7 +99,7 @@
-   DCHECK(base::FeatureList::IsEnabled(
-       extensions_features::kExtensionsMenuAccessControl));
-   auto bubble_delegate = std::make_unique<views::BubbleDialogDelegate>(
--      anchor, views::BubbleBorder::TOP_RIGHT,
-+      anchor, GetExtensionsMenuArrow(browser_),
-       views::BubbleBorder::DIALOG_SHADOW, /*autosize=*/true);
-   bubble_delegate->SetOwnedByWidget(
-       views::WidgetDelegate::OwnedByWidgetPassKey());
---- a/chrome/browser/ui/views/extensions/extensions_menu_view.cc
-+++ b/chrome/browser/ui/views/extensions/extensions_menu_view.cc
-@@ -25,6 +25,7 @@
- #include "chrome/browser/ui/views/extensions/extension_action_delegate_desktop.h"
- #include "chrome/browser/ui/views/extensions/extensions_container_views.h"
- #include "chrome/browser/ui/views/extensions/extensions_menu_item_view.h"
-+#include "chrome/browser/ui/views/frame/browser_view.h"
- #include "chrome/grit/generated_resources.h"
- #include "components/vector_icons/vector_icons.h"
- #include "extensions/common/extension_features.h"
-@@ -53,6 +54,17 @@
- 
- ExtensionsMenuView* g_extensions_dialog = nullptr;
- 
-+views::BubbleBorder::Arrow GetExtensionsMenuArrow(
-+    BrowserWindowInterface* browser) {
-+  BrowserView* browser_view = BrowserView::GetBrowserViewForBrowser(
-+      browser->GetBrowserForMigrationOnly());
-+  if (browser_view && browser_view->IsToolbarInVerticalSidebar() &&
-+      !browser_view->IsVerticalTabStripRightAligned()) {
-+    return views::BubbleBorder::Arrow::TOP_LEFT;
+ bool IsSidePanelOpen(const SidePanel* side_panel) {
+   if (!side_panel) {
+     return false;
+@@ -2168,6 +2187,12 @@ bool BrowserView::HasOpenBubbleFromTopContainer() const {
+   if (!top_container_ || !GetWidget()) {
+     return false;
+   }
++  // Focusable bubbles register directly on their anchor view. Checking that
++  // relationship first catches bubbles that are transient but not native-owned
++  // children of the browser window (notably on Wayland).
++  if (HasOpenAnchoredBubbleInViewSubtree(top_container_)) {
++    return true;
 +  }
-+  return views::BubbleBorder::Arrow::TOP_RIGHT;
-+}
-+
- constexpr int EXTENSIONS_SETTINGS_ID = 42;
- 
- bool CompareExtensionMenuItemViews(const ExtensionMenuItemView* a,
-@@ -78,7 +90,7 @@
-     ExtensionsContainer* extensions_container,
-     ExtensionsContainerViews* extensions_container_views)
-     : BubbleDialogDelegateView(views::BubbleAnchor(anchor_view),
--                               views::BubbleBorder::TOP_RIGHT),
-+                               GetExtensionsMenuArrow(browser)),
-       browser_(browser),
-       extensions_container_(CHECK_DEREF(extensions_container)),
-       extensions_container_views_(extensions_container_views),
+   for (views::Widget* widget :
+        views::Widget::GetAllOwnedWidgets(GetWidget()->GetNativeView())) {
+     if (IsOpenBubbleAnchoredInViewSubtree(widget, top_container_)) {
+@@ -2181,6 +2206,9 @@ bool BrowserView::HasOpenBubbleFromSideChrome() const {
+   if (!vertical_tab_strip_region_view_ || !GetWidget()) {
+     return false;
+   }
++  if (HasOpenAnchoredBubbleInViewSubtree(vertical_tab_strip_region_view_)) {
++    return true;
++  }
+   for (views::Widget* widget :
+        views::Widget::GetAllOwnedWidgets(GetWidget()->GetNativeView())) {
+     if (IsOpenBubbleAnchoredInViewSubtree(widget,
 --- a/chrome/browser/ui/views/frame/vertical_tab_strip_region_view.cc
 +++ b/chrome/browser/ui/views/frame/vertical_tab_strip_region_view.cc
-@@ -301,7 +301,7 @@
+@@ -301,7 +301,7 @@ void VerticalTabStripRegionView::SetZenModeFloatingStyleForLayout(
    }
    zen_mode_floating_style_ = floating;
    UpdateResizeAreaVisibility();
@@ -109,7 +60,7 @@
    UpdateInteriorMargin();
  
    auto* const background =
-@@ -1140,6 +1140,14 @@
+@@ -1138,6 +1138,14 @@ void VerticalTabStripRegionView::OnOmniboxPopupVisibilityChanged(bool is_open) {
    } else {
      omnibox_open_lock_.reset();
    }
@@ -124,6 +75,117 @@
  }
  
  void VerticalTabStripRegionView::OnActiveTabChanged(
+--- a/chrome/browser/ui/views/location_bar/location_bar_view.cc
++++ b/chrome/browser/ui/views/location_bar/location_bar_view.cc
+@@ -2084,6 +2084,16 @@ void LocationBarView::OnOmniboxFocused() {
+   // the omnibox is intentional, snapping is better than transitioning here.
+   hover_animation_.Reset();
+   RefreshBackground();
++#if BUILDFLAG(IS_LINUX)
++  if (BrowserView* browser_view =
++          BrowserView::GetBrowserViewForBrowser(browser_);
++      browser_view && browser_view->IsToolbarInVerticalSidebar()) {
++    SetClipLayerToVisibleBounds(false);
++  }
++#endif
++  if (parent()) {
++    parent()->InvalidateLayout();
++  }
+ 
+   // The AI mode page action icon view should only be visible when the omnibox
+   // is focused, so if there is a change in focus, refresh the icon.
+@@ -2104,6 +2114,16 @@ void LocationBarView::OnOmniboxBlurred() {
+     views::FocusRing::Get(this)->Refresh();
+   }
+   RefreshBackground();
++#if BUILDFLAG(IS_LINUX)
++  if (BrowserView* browser_view =
++          BrowserView::GetBrowserViewForBrowser(browser_);
++      browser_view && browser_view->IsToolbarInVerticalSidebar()) {
++    SetClipLayerToVisibleBounds(true);
++  }
++#endif
++  if (parent()) {
++    parent()->InvalidateLayout();
++  }
+ 
+   // The AI mode page action icon view should only be visible when the omnibox
+   // is focused, so if there is a change in focus, refresh the icon.
+--- a/chrome/browser/ui/views/omnibox/omnibox_popup_view_views.cc
++++ b/chrome/browser/ui/views/omnibox/omnibox_popup_view_views.cc
+@@ -751,7 +751,9 @@ gfx::Rect OmniboxPopupViewViews::GetTargetBounds() const {
+   popup_height += RoundedOmniboxResultsFrame::GetNonResultSectionHeight();
+ 
+   // The rounded popup is always offset the same amount from the omnibox.
+-  gfx::Rect content_rect = location_bar_view_->GetBoundsInScreen();
++  const gfx::Rect location_bar_bounds =
++      location_bar_view_->GetBoundsInScreen();
++  gfx::Rect content_rect = location_bar_bounds;
+   content_rect.Inset(
+       -RoundedOmniboxResultsFrame::GetLocationBarAlignmentInsets());
+   content_rect.set_height(popup_height);
+@@ -768,12 +770,17 @@ gfx::Rect OmniboxPopupViewViews::GetTargetBounds() const {
+     const int popup_width =
+         std::min(kZeniumVerticalOmniboxPopupWidth, available_width);
+     content_rect.set_width(std::max(content_rect.width(), popup_width));
+-    content_rect.set_x(
+-        browser_view->IsVerticalTabStripRightAligned()
+-            ? browser_bounds.right() - kZeniumVerticalOmniboxPopupMargin -
+-                  shadow_insets.right() - content_rect.width()
+-            : browser_bounds.x() + kZeniumVerticalOmniboxPopupMargin +
+-                  shadow_insets.left());
++    // Keep the popup cutout aligned with the expanded location bar. On a
++    // right-aligned sidebar the location bar grows leftward, so preserve its
++    // right edge instead.
++    const gfx::Insets alignment_insets =
++        RoundedOmniboxResultsFrame::GetLocationBarAlignmentInsets();
++    content_rect.set_x(browser_view->IsVerticalTabStripRightAligned()
++                           ? location_bar_bounds.right() +
++                                 alignment_insets.right() -
++                                 content_rect.width()
++                           : location_bar_bounds.x() -
++                                 alignment_insets.left());
+   }
+ 
+   if (omnibox::IsWebUIOmniboxPopupEnabled() &&
+--- a/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.cc
++++ b/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.cc
+@@ -164,6 +164,18 @@ class TopBackgroundView : public views::View {
+ 
+   void OnThemeChanged() override {
+     views::View::OnThemeChanged();
++    UpdateBackground();
++  }
++
++  void Layout(PassKey) override {
++    if (location_bar_size_ != location_bar_->Bounds().size()) {
++      UpdateBackground();
++    }
++  }
++
++ private:
++  void UpdateBackground() {
++    location_bar_size_ = location_bar_->Bounds().size();
+     const SkColor background_color =
+         GetColorProvider()->GetColor(kColorOmniboxResultsBackground);
+ 
+@@ -172,7 +184,7 @@ class TopBackgroundView : public views::View {
+     // not antialiased, since the goal is to completely cover the underlying
+     // pixels, and AA would let those on the edge partly bleed through.
+     SetBackground(LocationBarView::CreateRoundRectBackground(
+-        SK_ColorTRANSPARENT, background_color, location_bar_->Bounds().size(),
++        SK_ColorTRANSPARENT, background_color, location_bar_size_,
+         SkBlendMode::kSrc, false));
+   }
+ 
+@@ -218,6 +230,7 @@ class TopBackgroundView : public views::View {
+ 
+  private:
+   raw_ptr<const LocationBar> location_bar_;
++  gfx::Size location_bar_size_;
+ };
+ 
+ BEGIN_METADATA(TopBackgroundView)
 --- a/chrome/browser/ui/views/toolbar/toolbar_view.cc
 +++ b/chrome/browser/ui/views/toolbar/toolbar_view.cc
 @@ -84,6 +84,7 @@
@@ -134,7 +196,7 @@
  #include "chrome/browser/ui/views/page_action/page_action_container_view.h"
  #include "chrome/browser/ui/views/page_action/page_action_icon_container.h"
  #include "chrome/browser/ui/views/page_action/page_action_icon_controller.h"
-@@ -195,6 +196,8 @@
+@@ -195,6 +196,8 @@ constexpr int kVerticalSidebarHorizontalPadding = 6;
  constexpr int kVerticalSidebarRowGap = 4;
  constexpr int kVerticalSidebarLocationBarHeight = 36;
  constexpr int kVerticalSidebarMinimumLocationBarWidth = 120;
@@ -143,7 +205,7 @@
  
  constexpr int kDynamicNewTabButtonIconSize = 16;
  
-@@ -280,10 +283,12 @@
+@@ -280,10 +283,12 @@ class CenteredLocationBarLayout : public views::FlexLayout {
  
    CenteredLocationBarLayout(views::View* location_bar,
                              GetCenteredBoundsCallback callback,
@@ -158,7 +220,7 @@
  
    CenteredLocationBarLayout(const CenteredLocationBarLayout&) = delete;
    CenteredLocationBarLayout& operator=(const CenteredLocationBarLayout&) =
-@@ -324,18 +329,39 @@
+@@ -324,18 +329,39 @@ class CenteredLocationBarLayout : public views::FlexLayout {
          controls_bottom = kVerticalSidebarHorizontalPadding;
        }
  
@@ -202,7 +264,7 @@
                      location_bar_width, location_bar_height);
  
        layout.host_size.set_width(toolbar_width);
-@@ -355,6 +381,7 @@
+@@ -355,6 +381,7 @@ class CenteredLocationBarLayout : public views::FlexLayout {
    const raw_ptr<views::View> location_bar_;
    GetCenteredBoundsCallback callback_;
    IsVerticalSidebarCallback vertical_sidebar_callback_;
@@ -210,7 +272,24 @@
  };
  
  }  // namespace
-@@ -1812,7 +1839,8 @@
+@@ -1702,6 +1729,16 @@ void ToolbarView::Layout(PassKey) {
+     return;
+   }
+ 
++  // BubbleDialogDelegate cannot adjust bubbles against screen bounds on
++  // Wayland. Tell every bubble anchored anywhere in this toolbar which window
++  // edge it should grow away from when the toolbar lives in the sidebar.
++  const bool vertical_layout = IsVerticalLayout();
++  const bool right_aligned =
++      vertical_layout && IsVerticalTabsRightAligned();
++  SetProperty(views::kBubbleAnchorToLeftEdgeKey,
++              vertical_layout && !right_aligned);
++  SetProperty(views::kBubbleAnchorToRightEdgeKey, right_aligned);
++
+   if (display_mode_ == DisplayMode::kCustomTab) {
+     custom_tab_bar_->SetBounds(0, 0, width(),
+                                custom_tab_bar_->GetPreferredSize().height());
+@@ -1812,7 +1849,8 @@ void ToolbarView::InitLayout() {
            base::BindRepeating(&ToolbarView::GetCenteredLocationBarBounds,
                                base::Unretained(this)),
            base::BindRepeating(&ToolbarView::IsVerticalLayout,
@@ -220,114 +299,124 @@
  
    layout_manager_->SetOrientation(views::LayoutOrientation::kHorizontal)
        .SetCrossAxisAlignment(views::LayoutAlignment::kCenter)
---- a/chrome/browser/ui/views/location_bar/location_bar_view.cc
-+++ b/chrome/browser/ui/views/location_bar/location_bar_view.cc
-@@ -2084,6 +2084,16 @@
-   // the omnibox is intentional, snapping is better than transitioning here.
-   hover_animation_.Reset();
-   RefreshBackground();
-+#if BUILDFLAG(IS_LINUX)
-+  if (BrowserView* browser_view =
-+          BrowserView::GetBrowserViewForBrowser(browser_);
-+      browser_view && browser_view->IsToolbarInVerticalSidebar()) {
-+    SetClipLayerToVisibleBounds(false);
-+  }
-+#endif
-+  if (parent()) {
-+    parent()->InvalidateLayout();
-+  }
+--- a/ui/views/bubble/bubble_dialog_delegate_view.cc
++++ b/ui/views/bubble/bubble_dialog_delegate_view.cc
+@@ -15,6 +15,7 @@
  
-   // The AI mode page action icon view should only be visible when the omnibox
-   // is focused, so if there is a change in focus, refresh the icon.
-@@ -2104,6 +2114,16 @@
-     views::FocusRing::Get(this)->Refresh();
-   }
-   RefreshBackground();
-+#if BUILDFLAG(IS_LINUX)
-+  if (BrowserView* browser_view =
-+          BrowserView::GetBrowserViewForBrowser(browser_);
-+      browser_view && browser_view->IsToolbarInVerticalSidebar()) {
-+    SetClipLayerToVisibleBounds(true);
+ #include "base/feature_list.h"
+ #include "base/functional/bind.h"
++#include "base/i18n/rtl.h"
+ #include "base/logging.h"
+ #include "base/memory/ptr_util.h"
+ #include "base/memory/raw_ptr.h"
+@@ -91,6 +92,71 @@ namespace {
+ DEFINE_OWNED_UI_CLASS_PROPERTY_KEY(std::vector<views::BubbleDialogDelegate*>,
+                                    kAnchorVector)
+ 
++std::optional<bool> GetBubbleAnchorLeftAlignment(const View* anchor_view) {
++  for (const View* view = anchor_view; view; view = view->parent()) {
++    if (view->GetProperty(kBubbleAnchorToLeftEdgeKey)) {
++      return true;
++    }
++    if (view->GetProperty(kBubbleAnchorToRightEdgeKey)) {
++      return false;
++    }
 +  }
-+#endif
-+  if (parent()) {
-+    parent()->InvalidateLayout();
-+  }
- 
-   // The AI mode page action icon view should only be visible when the omnibox
-   // is focused, so if there is a change in focus, refresh the icon.
---- a/chrome/browser/ui/views/omnibox/omnibox_popup_view_views.cc
-+++ b/chrome/browser/ui/views/omnibox/omnibox_popup_view_views.cc
-@@ -751,7 +751,9 @@
-   popup_height += RoundedOmniboxResultsFrame::GetNonResultSectionHeight();
- 
-   // The rounded popup is always offset the same amount from the omnibox.
--  gfx::Rect content_rect = location_bar_view_->GetBoundsInScreen();
-+  const gfx::Rect location_bar_bounds =
-+      location_bar_view_->GetBoundsInScreen();
-+  gfx::Rect content_rect = location_bar_bounds;
-   content_rect.Inset(
-       -RoundedOmniboxResultsFrame::GetLocationBarAlignmentInsets());
-   content_rect.set_height(popup_height);
-@@ -768,12 +770,17 @@
-     const int popup_width =
-         std::min(kZeniumVerticalOmniboxPopupWidth, available_width);
-     content_rect.set_width(std::max(content_rect.width(), popup_width));
--    content_rect.set_x(
--        browser_view->IsVerticalTabStripRightAligned()
--            ? browser_bounds.right() - kZeniumVerticalOmniboxPopupMargin -
--                  shadow_insets.right() - content_rect.width()
--            : browser_bounds.x() + kZeniumVerticalOmniboxPopupMargin +
--                  shadow_insets.left());
-+    // Keep the popup cutout aligned with the expanded location bar. On a
-+    // right-aligned sidebar the location bar grows leftward, so preserve its
-+    // right edge instead.
-+    const gfx::Insets alignment_insets =
-+        RoundedOmniboxResultsFrame::GetLocationBarAlignmentInsets();
-+    content_rect.set_x(browser_view->IsVerticalTabStripRightAligned()
-+                           ? location_bar_bounds.right() +
-+                                 alignment_insets.right() -
-+                                 content_rect.width()
-+                           : location_bar_bounds.x() -
-+                                 alignment_insets.left());
-   }
- 
-   if (omnibox::IsWebUIOmniboxPopupEnabled() &&
---- a/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.cc
-+++ b/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.cc
-@@ -164,6 +164,18 @@
- 
-   void OnThemeChanged() override {
-     views::View::OnThemeChanged();
-+    UpdateBackground();
-+  }
++  return std::nullopt;
++}
 +
-+  void Layout(PassKey) override {
-+    if (location_bar_size_ != location_bar_->Bounds().size()) {
-+      UpdateBackground();
++BubbleBorder::Arrow AlignBubbleArrowHorizontally(
++    BubbleBorder::Arrow arrow,
++    bool align_left) {
++  if (align_left) {
++    switch (arrow) {
++      case BubbleBorder::TOP_RIGHT:
++        return BubbleBorder::TOP_LEFT;
++      case BubbleBorder::BOTTOM_RIGHT:
++        return BubbleBorder::BOTTOM_LEFT;
++      case BubbleBorder::RIGHT_TOP:
++        return BubbleBorder::LEFT_TOP;
++      case BubbleBorder::RIGHT_BOTTOM:
++        return BubbleBorder::LEFT_BOTTOM;
++      case BubbleBorder::RIGHT_CENTER:
++        return BubbleBorder::LEFT_CENTER;
++      default:
++        return arrow;
 +    }
 +  }
 +
-+ private:
-+  void UpdateBackground() {
-+    location_bar_size_ = location_bar_->Bounds().size();
-     const SkColor background_color =
-         GetColorProvider()->GetColor(kColorOmniboxResultsBackground);
- 
-@@ -172,7 +184,7 @@
-     // not antialiased, since the goal is to completely cover the underlying
-     // pixels, and AA would let those on the edge partly bleed through.
-     SetBackground(LocationBarView::CreateRoundRectBackground(
--        SK_ColorTRANSPARENT, background_color, location_bar_->Bounds().size(),
-+        SK_ColorTRANSPARENT, background_color, location_bar_size_,
-         SkBlendMode::kSrc, false));
++  switch (arrow) {
++    case BubbleBorder::TOP_LEFT:
++      return BubbleBorder::TOP_RIGHT;
++    case BubbleBorder::BOTTOM_LEFT:
++      return BubbleBorder::BOTTOM_RIGHT;
++    case BubbleBorder::LEFT_TOP:
++      return BubbleBorder::RIGHT_TOP;
++    case BubbleBorder::LEFT_BOTTOM:
++      return BubbleBorder::RIGHT_BOTTOM;
++    case BubbleBorder::LEFT_CENTER:
++      return BubbleBorder::RIGHT_CENTER;
++    default:
++      return arrow;
++  }
++}
++
++void ApplyAnchorRequestedBubbleAlignment(BubbleDialogDelegate* delegate) {
++  const std::optional<bool> align_left =
++      GetBubbleAnchorLeftAlignment(delegate->GetAnchorView());
++  if (!align_left) {
++    return;
++  }
++
++  BubbleBorder::Arrow arrow =
++      AlignBubbleArrowHorizontally(delegate->arrow(), *align_left);
++  // SetArrowWithoutResizing() accepts logical arrows, while arrow() is already
++  // mirrored. Convert the physical result back in RTL locales.
++  if (base::i18n::IsRTL()) {
++    arrow = BubbleBorder::horizontal_mirror(arrow);
++  }
++  delegate->SetArrowWithoutResizing(arrow);
++}
++
+ std::vector<BubbleDialogDelegate*>& GetAnchorVector(View* view) {
+   if (!view->GetProperty(kAnchorVector)) {
+     return *(view->SetProperty(
+@@ -541,6 +607,7 @@ Widget* BubbleDialogDelegate::CreateBubbleInternal(
+   // Get the latest anchor widget from the anchor view at bubble creation time.
+   if (auto* anchor_view = delegate->GetAnchorView()) {
+     delegate->SetAnchorView(anchor_view);
++    ApplyAnchorRequestedBubbleAlignment(delegate);
    }
  
-@@ -218,6 +230,7 @@
+   Widget* const bubble_widget = CreateBubbleWidget(delegate, ownership);
+--- a/ui/views/view_class_properties.cc
++++ b/ui/views/view_class_properties.cc
+@@ -38,6 +38,8 @@ DEFINE_OWNED_UI_CLASS_PROPERTY_KEY(gfx::Insets, kInternalPaddingKey)
+ DEFINE_UI_CLASS_PROPERTY_KEY(views::DialogDelegate*,
+                              kAnchoredDialogKey,
+                              nullptr)
++DEFINE_UI_CLASS_PROPERTY_KEY(bool, kBubbleAnchorToLeftEdgeKey, false)
++DEFINE_UI_CLASS_PROPERTY_KEY(bool, kBubbleAnchorToRightEdgeKey, false)
+ DEFINE_UI_CLASS_PROPERTY_KEY(views::Widget*, kWidgetForAnchoringKey, nullptr)
+ DEFINE_OWNED_UI_CLASS_PROPERTY_KEY(BoxLayoutFlexSpecification,
+                                    kBoxLayoutFlexKey)
+--- a/ui/views/view_class_properties.h
++++ b/ui/views/view_class_properties.h
+@@ -52,6 +52,16 @@ VIEWS_EXPORT extern const ui::ClassProperty<gfx::Insets*>* const
+ VIEWS_EXPORT extern const ui::ClassProperty<DialogDelegate*>* const
+     kAnchoredDialogKey;
  
-  private:
-   raw_ptr<const LocationBar> location_bar_;
-+  gfx::Size location_bar_size_;
- };
- 
- BEGIN_METADATA(TopBackgroundView)
++// Bubble anchors can opt their descendant bubbles into a physical horizontal
++// alignment. This is useful for controls hosted along a window edge on
++// platforms where bubbles cannot be adjusted using global screen coordinates.
++// These properties are inherited by walking the anchor view's ancestors and
++// should not both be set on the same subtree.
++VIEWS_EXPORT extern const ui::ClassProperty<bool>* const
++    kBubbleAnchorToLeftEdgeKey;
++VIEWS_EXPORT extern const ui::ClassProperty<bool>* const
++    kBubbleAnchorToRightEdgeKey;
++
+ // A property to store the anchor widget used for anchoring a bubble dialog
+ // to this view. If unset, the anchor widget is this view's containing widget.
+ //
+
