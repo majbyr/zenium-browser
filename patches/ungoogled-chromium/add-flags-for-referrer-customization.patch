@@ -1,5 +1,7 @@
---- a/chrome/browser/ungoogled_flag_entries.h
-+++ b/chrome/browser/ungoogled_flag_entries.h
+Index: src/chrome/browser/ungoogled_flag_entries.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_entries.h
++++ src/chrome/browser/ungoogled_flag_entries.h
 @@ -100,4 +100,16 @@
       "Enable themes in Incognito mode",
       "Allows themes to override Google's built-in Incognito theming. ungoogled-chromium flag.",
@@ -17,8 +19,10 @@
 +     "Removes all cross-origin referrers and strips same-origin referrers down to the origin. Has lower precedence than remove-cross-origin-referrers. ungoogled-chromium flag.",
 +     kOsAll, FEATURE_VALUE_TYPE(network::features::kMinimalReferrers)},
  #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_ENTRIES_H_
---- a/content/browser/renderer_host/navigation_request.cc
-+++ b/content/browser/renderer_host/navigation_request.cc
+Index: src/content/browser/renderer_host/navigation_request.cc
+===================================================================
+--- src.orig/content/browser/renderer_host/navigation_request.cc
++++ src/content/browser/renderer_host/navigation_request.cc
 @@ -191,6 +191,7 @@
  #include "services/network/public/cpp/permissions_policy/fenced_frame_permissions_policies.h"
  #include "services/network/public/cpp/permissions_policy/permissions_policy_declaration.h"
@@ -42,8 +46,10 @@
  
    // Next, set the HTTP Origin if needed.
    std::optional<std::string> existing_origin =
---- a/content/renderer/render_frame_impl.cc
-+++ b/content/renderer/render_frame_impl.cc
+Index: src/content/renderer/render_frame_impl.cc
+===================================================================
+--- src.orig/content/renderer/render_frame_impl.cc
++++ src/content/renderer/render_frame_impl.cc
 @@ -137,6 +137,7 @@
  #include "services/network/public/cpp/content_decoding_interceptor.h"
  #include "services/network/public/cpp/features.h"
@@ -70,8 +76,10 @@
  }
  
  void RenderFrameImpl::DidLoadResourceFromMemoryCache(
---- a/services/network/network_service_network_delegate.cc
-+++ b/services/network/network_service_network_delegate.cc
+Index: src/services/network/network_service_network_delegate.cc
+===================================================================
+--- src.orig/services/network/network_service_network_delegate.cc
++++ src/services/network/network_service_network_delegate.cc
 @@ -32,6 +32,7 @@
  #include "services/network/network_service_proxy_delegate.h"
  #include "services/network/pending_callback_chain.h"
@@ -98,8 +106,10 @@
      return;
    }
  }
---- a/services/network/public/cpp/BUILD.gn
-+++ b/services/network/public/cpp/BUILD.gn
+Index: src/services/network/public/cpp/BUILD.gn
+===================================================================
+--- src.orig/services/network/public/cpp/BUILD.gn
++++ src/services/network/public/cpp/BUILD.gn
 @@ -129,6 +129,8 @@ component("cpp") {
      "parsed_headers.cc",
      "parsed_headers.h",
@@ -109,8 +119,10 @@
      "request_destination.cc",
      "request_destination.h",
      "request_header_to_enum.cc",
---- a/services/network/public/cpp/features.cc
-+++ b/services/network/public/cpp/features.cc
+Index: src/services/network/public/cpp/features.cc
+===================================================================
+--- src.orig/services/network/public/cpp/features.cc
++++ src/services/network/public/cpp/features.cc
 @@ -17,6 +17,14 @@
  #include "url/origin.h"
  
@@ -126,8 +138,10 @@
  
  // Enables the Accept-CH support disabler. If this feature is activated, Chrome
  // ignore Accept-CH response headers for a site that is specified in the
---- a/services/network/public/cpp/features.h
-+++ b/services/network/public/cpp/features.h
+Index: src/services/network/public/cpp/features.h
+===================================================================
+--- src.orig/services/network/public/cpp/features.h
++++ src/services/network/public/cpp/features.h
 @@ -17,6 +17,10 @@ class Origin;
  }  // namespace url
  
@@ -139,8 +153,10 @@
  
  COMPONENT_EXPORT(NETWORK_CPP_FLAGS_AND_SWITCHES)
  BASE_DECLARE_FEATURE(kBlockAcceptClientHints);
+Index: src/services/network/public/cpp/referrer_sanitizer.cc
+===================================================================
 --- /dev/null
-+++ b/services/network/public/cpp/referrer_sanitizer.cc
++++ src/services/network/public/cpp/referrer_sanitizer.cc
 @@ -0,0 +1,49 @@
 +// Copyright 2023 The ungoogled-chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
@@ -191,8 +207,10 @@
 +}
 +
 +}  // namespace referrer_sanitizer
+Index: src/services/network/public/cpp/referrer_sanitizer.h
+===================================================================
 --- /dev/null
-+++ b/services/network/public/cpp/referrer_sanitizer.h
++++ src/services/network/public/cpp/referrer_sanitizer.h
 @@ -0,0 +1,32 @@
 +// Copyright 2023 The ungoogled-chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
@@ -226,8 +244,10 @@
 +}  // namespace referrer_sanitizer
 +
 +#endif  // SERVICES_NETWORK_PUBLIC_CPP_REFERRER_SANITIZER_H_
---- a/third_party/blink/renderer/modules/service_worker/web_service_worker_fetch_context_impl.cc
-+++ b/third_party/blink/renderer/modules/service_worker/web_service_worker_fetch_context_impl.cc
+Index: src/third_party/blink/renderer/modules/service_worker/web_service_worker_fetch_context_impl.cc
+===================================================================
+--- src.orig/third_party/blink/renderer/modules/service_worker/web_service_worker_fetch_context_impl.cc
++++ src/third_party/blink/renderer/modules/service_worker/web_service_worker_fetch_context_impl.cc
 @@ -12,11 +12,13 @@
  #include "base/task/single_thread_task_runner.h"
  #include "mojo/public/cpp/bindings/pending_remote.h"
@@ -260,8 +280,10 @@
  }
  
  std::vector<std::unique_ptr<URLLoaderThrottle>>
---- a/third_party/blink/renderer/platform/loader/fetch/url_loader/dedicated_or_shared_worker_global_scope_context_impl.cc
-+++ b/third_party/blink/renderer/platform/loader/fetch/url_loader/dedicated_or_shared_worker_global_scope_context_impl.cc
+Index: src/third_party/blink/renderer/platform/loader/fetch/url_loader/dedicated_or_shared_worker_global_scope_context_impl.cc
+===================================================================
+--- src.orig/third_party/blink/renderer/platform/loader/fetch/url_loader/dedicated_or_shared_worker_global_scope_context_impl.cc
++++ src/third_party/blink/renderer/platform/loader/fetch/url_loader/dedicated_or_shared_worker_global_scope_context_impl.cc
 @@ -13,6 +13,7 @@
  #include "base/task/sequenced_task_runner.h"
  #include "base/task/single_thread_task_runner.h"

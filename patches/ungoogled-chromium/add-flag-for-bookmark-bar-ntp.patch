@@ -1,5 +1,7 @@
---- a/chrome/browser/ui/bookmarks/bookmark_bar_controller.cc
-+++ b/chrome/browser/ui/bookmarks/bookmark_bar_controller.cc
+Index: src/chrome/browser/ui/bookmarks/bookmark_bar_controller.cc
+===================================================================
+--- src.orig/chrome/browser/ui/bookmarks/bookmark_bar_controller.cc
++++ src/chrome/browser/ui/bookmarks/bookmark_bar_controller.cc
 @@ -4,6 +4,7 @@
  
  #include "chrome/browser/ui/bookmarks/bookmark_bar_controller.h"
@@ -19,8 +21,10 @@
    Profile* profile = browser_->GetProfile();
    if (profile->IsGuestSession()) {
      return false;
---- a/chrome/browser/ungoogled_flag_choices.h
-+++ b/chrome/browser/ungoogled_flag_choices.h
+Index: src/chrome/browser/ungoogled_flag_choices.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_choices.h
++++ src/chrome/browser/ungoogled_flag_choices.h
 @@ -34,4 +34,10 @@ const FeatureEntry::Choice kScrollEventC
       "scroll-tabs",
       "never"}
@@ -32,8 +36,10 @@
 +     "never"},
 +};
  #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_CHOICES_H_
---- a/chrome/browser/ungoogled_flag_entries.h
-+++ b/chrome/browser/ungoogled_flag_entries.h
+Index: src/chrome/browser/ungoogled_flag_entries.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_entries.h
++++ src/chrome/browser/ungoogled_flag_entries.h
 @@ -36,4 +36,8 @@
       "Scroll switches tab",
       "Switch to the left/right tab if the wheel-scroll happens over the tabstrip, or the empty space beside the tabstrip. ungoogled-chromium flag.",

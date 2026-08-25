@@ -1,0 +1,16 @@
+Index: src/components/live_caption/caption_util.cc
+===================================================================
+--- src.orig/components/live_caption/caption_util.cc
++++ src/components/live_caption/caption_util.cc
+@@ -125,11 +125,7 @@ std::optional<ui::CaptionStyle> GetCapti
+ }
+ 
+ bool IsLiveCaptionFeatureSupported() {
+-#if !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_ANDROID)
+-  return speech::IsOnDeviceSpeechRecognitionSupported();
+-#else
+   return false;
+-#endif  // !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_ANDROID)
+ }
+ 
+ bool IsHeadlessCaptionFeatureSupported() {

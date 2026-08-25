@@ -1,7 +1,9 @@
 # Stop downloading of profile avatar (trk:271:...)
 
---- a/chrome/browser/profiles/profile_avatar_downloader.cc
-+++ b/chrome/browser/profiles/profile_avatar_downloader.cc
+Index: src/chrome/browser/profiles/profile_avatar_downloader.cc
+===================================================================
+--- src.orig/chrome/browser/profiles/profile_avatar_downloader.cc
++++ src/chrome/browser/profiles/profile_avatar_downloader.cc
 @@ -27,8 +27,7 @@ ProfileAvatarDownloader::ProfileAvatarDo
                                                   FetchCompleteCallback callback)
      : icon_index_(icon_index), callback_(std::move(callback)) {

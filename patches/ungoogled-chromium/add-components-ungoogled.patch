@@ -1,7 +1,9 @@
 # Add ungoogled-chromium-specific code to components/ungoogled/
 
+Index: src/components/ungoogled/BUILD.gn
+===================================================================
 --- /dev/null
-+++ b/components/ungoogled/BUILD.gn
++++ src/components/ungoogled/BUILD.gn
 @@ -0,0 +1,14 @@
 +# Copyright (c) 2020 The ungoogled-chromium Authors. All rights reserved.
 +# Use of this source code is governed by a BSD-style license that can be
@@ -17,8 +19,10 @@
 +
 +  deps = [ "//base" ]
 +}
+Index: src/components/ungoogled/ungoogled_switches.cc
+===================================================================
 --- /dev/null
-+++ b/components/ungoogled/ungoogled_switches.cc
++++ src/components/ungoogled/ungoogled_switches.cc
 @@ -0,0 +1,18 @@
 +// Copyright (c) 2020 The ungoogled-chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
@@ -38,8 +42,10 @@
 +const char kFingerprintingCanvasImageDataNoise[] = "fingerprinting-canvas-image-data-noise";
 +
 +}  // namespace switches
+Index: src/components/ungoogled/ungoogled_switches.h
+===================================================================
 --- /dev/null
-+++ b/components/ungoogled/ungoogled_switches.h
++++ src/components/ungoogled/ungoogled_switches.h
 @@ -0,0 +1,20 @@
 +// Copyright (c) 2020 The ungoogled-chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be

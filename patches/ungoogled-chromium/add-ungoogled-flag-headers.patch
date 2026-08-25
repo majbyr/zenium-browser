@@ -1,5 +1,7 @@
---- a/chrome/browser/about_flags.cc
-+++ b/chrome/browser/about_flags.cc
+Index: src/chrome/browser/about_flags.cc
+===================================================================
+--- src.orig/chrome/browser/about_flags.cc
++++ src/chrome/browser/about_flags.cc
 @@ -4751,7 +4751,13 @@ const FeatureEntry::FeatureVariation kTo
  // calculate and verify checksum.
  //
@@ -14,8 +16,10 @@
  // Include generated flags for flag unexpiry; see //docs/flag_expiry.md and
  // //tools/flags/generate_unexpire_flags.py.
  #include "build/chromeos_buildflags.h"
+Index: src/chrome/browser/bromite_flag_choices.h
+===================================================================
 --- /dev/null
-+++ b/chrome/browser/bromite_flag_choices.h
++++ src/chrome/browser/bromite_flag_choices.h
 @@ -0,0 +1,7 @@
 +// Copyright (c) 2020 The ungoogled-chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
@@ -24,8 +28,10 @@
 +#ifndef CHROME_BROWSER_BROMITE_FLAG_CHOICES_H_
 +#define CHROME_BROWSER_BROMITE_FLAG_CHOICES_H_
 +#endif  // CHROME_BROWSER_BROMITE_FLAG_CHOICES_H_
+Index: src/chrome/browser/bromite_flag_entries.h
+===================================================================
 --- /dev/null
-+++ b/chrome/browser/bromite_flag_entries.h
++++ src/chrome/browser/bromite_flag_entries.h
 @@ -0,0 +1,7 @@
 +// Copyright (c) 2020 The ungoogled-chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
@@ -34,8 +40,10 @@
 +#ifndef CHROME_BROWSER_BROMITE_FLAG_ENTRIES_H_
 +#define CHROME_BROWSER_BROMITE_FLAG_ENTRIES_H_
 +#endif  // CHROME_BROWSER_BROMITE_FLAG_ENTRIES_H_
+Index: src/chrome/browser/ungoogled_flag_choices.h
+===================================================================
 --- /dev/null
-+++ b/chrome/browser/ungoogled_flag_choices.h
++++ src/chrome/browser/ungoogled_flag_choices.h
 @@ -0,0 +1,7 @@
 +// Copyright (c) 2020 The ungoogled-chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
@@ -44,8 +52,10 @@
 +#ifndef CHROME_BROWSER_UNGOOGLED_FLAG_CHOICES_H_
 +#define CHROME_BROWSER_UNGOOGLED_FLAG_CHOICES_H_
 +#endif  // CHROME_BROWSER_UNGOOGLED_FLAG_CHOICES_H_
+Index: src/chrome/browser/ungoogled_flag_entries.h
+===================================================================
 --- /dev/null
-+++ b/chrome/browser/ungoogled_flag_entries.h
++++ src/chrome/browser/ungoogled_flag_entries.h
 @@ -0,0 +1,7 @@
 +// Copyright (c) 2020 The ungoogled-chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
@@ -54,8 +64,10 @@
 +#ifndef CHROME_BROWSER_UNGOOGLED_FLAG_ENTRIES_H_
 +#define CHROME_BROWSER_UNGOOGLED_FLAG_ENTRIES_H_
 +#endif  // CHROME_BROWSER_UNGOOGLED_FLAG_ENTRIES_H_
+Index: src/chrome/browser/ungoogled_platform_flag_choices.h
+===================================================================
 --- /dev/null
-+++ b/chrome/browser/ungoogled_platform_flag_choices.h
++++ src/chrome/browser/ungoogled_platform_flag_choices.h
 @@ -0,0 +1,7 @@
 +// Copyright (c) 2020 The ungoogled-chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
@@ -64,8 +76,10 @@
 +#ifndef CHROME_BROWSER_UNGOOGLED_PLATFORM_FLAG_CHOICES_H_
 +#define CHROME_BROWSER_UNGOOGLED_PLATFORM_FLAG_CHOICES_H_
 +#endif  // CHROME_BROWSER_UNGOOGLED_PLATFORM_FLAG_CHOICES_H_
+Index: src/chrome/browser/ungoogled_platform_flag_entries.h
+===================================================================
 --- /dev/null
-+++ b/chrome/browser/ungoogled_platform_flag_entries.h
++++ src/chrome/browser/ungoogled_platform_flag_entries.h
 @@ -0,0 +1,7 @@
 +// Copyright (c) 2020 The ungoogled-chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be

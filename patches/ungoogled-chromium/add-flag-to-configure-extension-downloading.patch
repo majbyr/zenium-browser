@@ -1,8 +1,10 @@
 # Add extension-mime-request-handling chrome://flag to tweak the behavior of
 # extension MIME types
 
---- a/chrome/browser/download/download_target_determiner.cc
-+++ b/chrome/browser/download/download_target_determiner.cc
+Index: src/chrome/browser/download/download_target_determiner.cc
+===================================================================
+--- src.orig/chrome/browser/download/download_target_determiner.cc
++++ src/chrome/browser/download/download_target_determiner.cc
 @@ -43,6 +43,7 @@
  #include "content/public/browser/browser_thread.h"
  #include "content/public/browser/download_item_utils.h"
@@ -28,8 +30,10 @@
  #endif
  
    // Don't prompt for file types that are marked for opening automatically.
---- a/chrome/browser/extensions/extension_management.cc
-+++ b/chrome/browser/extensions/extension_management.cc
+Index: src/chrome/browser/extensions/extension_management.cc
+===================================================================
+--- src.orig/chrome/browser/extensions/extension_management.cc
++++ src/chrome/browser/extensions/extension_management.cc
 @@ -333,6 +333,13 @@ bool ExtensionManagement::IsInstallation
  bool ExtensionManagement::IsOffstoreInstallAllowed(
      const GURL& url,
@@ -44,8 +48,10 @@
    // No allowed install sites specified, disallow by default.
    if (!global_settings_->install_sources.has_value())
      return false;
---- a/chrome/browser/ungoogled_flag_choices.h
-+++ b/chrome/browser/ungoogled_flag_choices.h
+Index: src/chrome/browser/ungoogled_flag_choices.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_choices.h
++++ src/chrome/browser/ungoogled_flag_choices.h
 @@ -4,4 +4,13 @@
  
  #ifndef CHROME_BROWSER_UNGOOGLED_FLAG_CHOICES_H_
@@ -60,8 +66,10 @@
 +     "always-prompt-for-install"},
 +};
  #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_CHOICES_H_
---- a/chrome/browser/ungoogled_flag_entries.h
-+++ b/chrome/browser/ungoogled_flag_entries.h
+Index: src/chrome/browser/ungoogled_flag_entries.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_entries.h
++++ src/chrome/browser/ungoogled_flag_entries.h
 @@ -8,4 +8,8 @@
       "SetIpv6ProbeFalse",
       "Forces the result of the browser's IPv6 probing (i.e. IPv6 connectivity test) to be unsuccessful. This causes IPv4 addresses to be prioritized over IPv6 addresses. Without this flag, the probing result is set to be successful, which causes IPv6 to be used over IPv4 when possible. ungoogled-chromium flag.",
@@ -71,8 +79,10 @@
 +     "Used when deciding how to handle a request for a CRX or User Script MIME type. ungoogled-chromium flag.",
 +     kOsAll, MULTI_VALUE_TYPE(kExtensionHandlingChoices)},
  #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_ENTRIES_H_
---- a/extensions/browser/extension_util.cc
-+++ b/extensions/browser/extension_util.cc
+Index: src/extensions/browser/extension_util.cc
+===================================================================
+--- src.orig/extensions/browser/extension_util.cc
++++ src/extensions/browser/extension_util.cc
 @@ -575,6 +575,14 @@ bool AnyCurrentlyInstalledExtensionIsFro
                               });
  }
@@ -97,8 +107,10 @@
    }
    return false;
  }
---- a/extensions/browser/extension_util.h
-+++ b/extensions/browser/extension_util.h
+Index: src/extensions/browser/extension_util.h
+===================================================================
+--- src.orig/extensions/browser/extension_util.h
++++ src/extensions/browser/extension_util.h
 @@ -181,6 +181,10 @@ bool IsAppLaunchableWithoutEnabling(cons
  bool AnyCurrentlyInstalledExtensionIsFromWebstore(
      content::BrowserContext* context);

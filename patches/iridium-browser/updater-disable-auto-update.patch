@@ -14,8 +14,10 @@ the case anyway, since we are based off Chromium, not Chrome.
  chrome/browser/app_controller_mac.mm | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
---- a/chrome/browser/app_controller_mac.mm
-+++ b/chrome/browser/app_controller_mac.mm
+Index: src/chrome/browser/app_controller_mac.mm
+===================================================================
+--- src.orig/chrome/browser/app_controller_mac.mm
++++ src/chrome/browser/app_controller_mac.mm
 @@ -1222,7 +1222,7 @@ class AppControllerProfileObserver : pub
    CFStringRef checkInterval = CFSTR("checkInterval");
    CFPropertyListRef plist = CFPreferencesCopyAppValue(checkInterval, app);

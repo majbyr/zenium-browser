@@ -1,7 +1,9 @@
 # Disables various detections of Google hosts and functionality specific to them
 
---- a/chrome/browser/glic/glic_user_status_request.cc
-+++ b/chrome/browser/glic/glic_user_status_request.cc
+Index: src/chrome/browser/glic/glic_user_status_request.cc
+===================================================================
+--- src.orig/chrome/browser/glic/glic_user_status_request.cc
++++ src/chrome/browser/glic/glic_user_status_request.cc
 @@ -64,11 +64,6 @@ std::vector<std::string> GlicUserStatusR
      return headers;
    }
@@ -14,8 +16,10 @@
  
    return headers;
  }
---- a/chrome/browser/ui/webui/suggest_internals/suggest_internals_handler.cc
-+++ b/chrome/browser/ui/webui/suggest_internals/suggest_internals_handler.cc
+Index: src/chrome/browser/ui/webui/suggest_internals/suggest_internals_handler.cc
+===================================================================
+--- src.orig/chrome/browser/ui/webui/suggest_internals/suggest_internals_handler.cc
++++ src/chrome/browser/ui/webui/suggest_internals/suggest_internals_handler.cc
 @@ -70,9 +70,6 @@ void SuggestInternalsHandler::OnRequestC
        suggest_internals::mojom::Request::New();
    mojom_request->id = request_id;
@@ -26,8 +30,10 @@
    mojom_request->data[request->method] = request->url.spec();
    mojom_request->status = suggest_internals::mojom::RequestStatus::kCreated;
    page_->OnRequestCreated(std::move(mojom_request));
---- a/chrome/common/google_url_loader_throttle.cc
-+++ b/chrome/common/google_url_loader_throttle.cc
+Index: src/chrome/common/google_url_loader_throttle.cc
+===================================================================
+--- src.orig/chrome/common/google_url_loader_throttle.cc
++++ src/chrome/common/google_url_loader_throttle.cc
 @@ -25,10 +25,6 @@
  #include "services/network/public/mojom/x_frame_options.mojom.h"
  #include "url/origin.h"
@@ -210,8 +216,10 @@
  }
  
  #if BUILDFLAG(ENABLE_BOUND_SESSION_CREDENTIALS)
---- a/components/google/core/common/google_util.cc
-+++ b/components/google/core/common/google_util.cc
+Index: src/components/google/core/common/google_util.cc
+===================================================================
+--- src.orig/components/google/core/common/google_util.cc
++++ src/components/google/core/common/google_util.cc
 @@ -33,117 +33,6 @@ namespace google_util {
  
  namespace {
@@ -530,8 +538,10 @@
    return false;
  }
  
---- a/components/page_load_metrics/google/browser/google_url_util.cc
-+++ b/components/page_load_metrics/google/browser/google_url_util.cc
+Index: src/components/page_load_metrics/google/browser/google_url_util.cc
+===================================================================
+--- src.orig/components/page_load_metrics/google/browser/google_url_util.cc
++++ src/components/page_load_metrics/google/browser/google_url_util.cc
 @@ -14,39 +14,7 @@
  namespace page_load_metrics {
  
@@ -583,8 +593,10 @@
  }
  
  bool IsProbablyGoogleSearchUrl(const GURL& url) {
---- a/components/search_engines/template_url.cc
-+++ b/components/search_engines/template_url.cc
+Index: src/components/search_engines/template_url.cc
+===================================================================
+--- src.orig/components/search_engines/template_url.cc
++++ src/components/search_engines/template_url.cc
 @@ -628,10 +628,7 @@ std::u16string TemplateURLRef::SearchTer
  bool TemplateURLRef::HasGoogleBaseURLs(
      const SearchTermsData& search_terms_data) const {
@@ -597,8 +609,10 @@
  }
  
  bool TemplateURLRef::ExtractSearchTermsFromURL(
---- a/components/variations/net/variations_http_headers.cc
-+++ b/components/variations/net/variations_http_headers.cc
+Index: src/components/variations/net/variations_http_headers.cc
+===================================================================
+--- src.orig/components/variations/net/variations_http_headers.cc
++++ src/components/variations/net/variations_http_headers.cc
 @@ -32,10 +32,6 @@
  
  namespace variations {
@@ -721,8 +735,10 @@
  }
  
  }  // namespace variations
---- a/content/browser/preloading/prefetch/prefetch_resource_request_utils.cc
-+++ b/content/browser/preloading/prefetch/prefetch_resource_request_utils.cc
+Index: src/content/browser/preloading/prefetch/prefetch_resource_request_utils.cc
+===================================================================
+--- src.orig/content/browser/preloading/prefetch/prefetch_resource_request_utils.cc
++++ src/content/browser/preloading/prefetch/prefetch_resource_request_utils.cc
 @@ -166,41 +166,11 @@ void AddVariationsHeaderForPrefetch(
      bool is_first_party_context_for_variations) {
    CHECK(prefetch_request.browser_context());
@@ -765,8 +781,10 @@
    AddVariationsHeaderForPrefetch(resource_request.cors_exempt_headers,
                                   resource_request.url, prefetch_request,
                                   IsFirstPartyContext(resource_request));
---- a/net/base/url_util.cc
-+++ b/net/base/url_util.cc
+Index: src/net/base/url_util.cc
+===================================================================
+--- src.orig/net/base/url_util.cc
++++ src/net/base/url_util.cc
 @@ -549,28 +549,6 @@ bool HasGoogleHost(const GURL& url) {
  }
  

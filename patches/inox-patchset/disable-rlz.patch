@@ -1,7 +1,9 @@
 # Disable rlz
 
---- a/BUILD.gn
-+++ b/BUILD.gn
+Index: src/BUILD.gn
+===================================================================
+--- src.orig/BUILD.gn
++++ src/BUILD.gn
 @@ -462,14 +462,6 @@ group("gn_all") {
        ]
      }
@@ -17,8 +19,10 @@
      if (is_linux || is_chromeos) {
        # The following are definitely linux-only.
        deps += [
---- a/rlz/buildflags/buildflags.gni
-+++ b/rlz/buildflags/buildflags.gni
+Index: src/rlz/buildflags/buildflags.gni
+===================================================================
+--- src.orig/rlz/buildflags/buildflags.gni
++++ src/rlz/buildflags/buildflags.gni
 @@ -6,7 +6,7 @@ import("//build/config/chrome_build.gni"
  
  # Whether we are using the rlz library or not.  Platforms like Android send

@@ -1,5 +1,7 @@
---- a/chrome/browser/ui/browser.cc
-+++ b/chrome/browser/ui/browser.cc
+Index: src/chrome/browser/ui/browser.cc
+===================================================================
+--- src.orig/chrome/browser/ui/browser.cc
++++ src/chrome/browser/ui/browser.cc
 @@ -150,6 +150,7 @@
  #include "chrome/browser/ui/unload_controller.h"
  #include "chrome/browser/ui/views/frame/browser_view.h"
@@ -124,8 +126,10 @@
  }
  
  void Browser::FinishWarnBeforeClosing(WarnBeforeClosingResult result) {
---- a/chrome/browser/ui/browser.h
-+++ b/chrome/browser/ui/browser.h
+Index: src/chrome/browser/ui/browser.h
+===================================================================
+--- src.orig/chrome/browser/ui/browser.h
++++ src/chrome/browser/ui/browser.h
 @@ -31,6 +31,7 @@
  #include "chrome/browser/ui/browser_window/public/browser_window_interface.h"
  #include "chrome/browser/ui/browser_window_deleter.h"
@@ -161,8 +165,10 @@
    /////////////////////////////////////////////////////////////////////////////
  
    // Override values for the bounds of the window and its maximized or minimized
---- a/chrome/browser/ungoogled_flag_choices.h
-+++ b/chrome/browser/ungoogled_flag_choices.h
+Index: src/chrome/browser/ungoogled_flag_choices.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_choices.h
++++ src/chrome/browser/ungoogled_flag_choices.h
 @@ -61,4 +61,13 @@ const FeatureEntry::Choice kCloseWindowW
       "close-window-with-last-tab",
       "never"},
@@ -177,8 +183,10 @@
 +     "multiple"},
 +};
  #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_CHOICES_H_
---- a/chrome/browser/ungoogled_flag_entries.h
-+++ b/chrome/browser/ungoogled_flag_entries.h
+Index: src/chrome/browser/ungoogled_flag_entries.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_entries.h
++++ src/chrome/browser/ungoogled_flag_entries.h
 @@ -60,4 +60,8 @@
       "Clear data on exit",
       "Clears all browsing data on exit. ungoogled-chromium flag",

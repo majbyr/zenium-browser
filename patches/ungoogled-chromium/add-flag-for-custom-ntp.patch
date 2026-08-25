@@ -1,5 +1,7 @@
---- a/chrome/browser/chrome_content_browser_client.cc
-+++ b/chrome/browser/chrome_content_browser_client.cc
+Index: src/chrome/browser/chrome_content_browser_client.cc
+===================================================================
+--- src.orig/chrome/browser/chrome_content_browser_client.cc
++++ src/chrome/browser/chrome_content_browser_client.cc
 @@ -867,11 +867,15 @@ bool HandleNewTabPageLocationOverride(
  
    // Don't change the URL when incognito mode.
@@ -16,8 +18,10 @@
    if (ntp_location.empty()) {
      return false;
    }
---- a/chrome/browser/ungoogled_flag_entries.h
-+++ b/chrome/browser/ungoogled_flag_entries.h
+Index: src/chrome/browser/ungoogled_flag_entries.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_entries.h
++++ src/chrome/browser/ungoogled_flag_entries.h
 @@ -64,4 +64,8 @@
       "Close Confirmation",
       "Show a warning prompt when closing the browser window. ungoogled-chromium flag",
@@ -27,8 +31,10 @@
 +     "Allows setting a custom URL for the new tab page. Value can be internal (e.g. `about:blank` or `chrome://new-tab-page`), external (e.g. `example.com`), or local (e.g. `file:///tmp/startpage.html`). This applies for incognito windows as well when not set to a `chrome://` internal page. ungoogled-chromium flag",
 +     kOsDesktop, ORIGIN_LIST_VALUE_TYPE("custom-ntp", "")},
  #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_ENTRIES_H_
---- a/components/webui/flags/flags_state.cc
-+++ b/components/webui/flags/flags_state.cc
+Index: src/components/webui/flags/flags_state.cc
+===================================================================
+--- src.orig/components/webui/flags/flags_state.cc
++++ src/components/webui/flags/flags_state.cc
 @@ -245,6 +245,7 @@ std::string GetCombinedOriginListValue(c
        command_line.GetSwitchValueASCII(command_line_switch);
    const std::string new_value =

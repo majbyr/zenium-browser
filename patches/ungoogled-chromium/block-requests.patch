@@ -6,8 +6,10 @@
 # Password manager attempts to get credential affiliation
 # Attempts to check for updates even with autoupdate disabled
 # Dev tools attempts to download css data
---- a/chrome/browser/new_tab_page/one_google_bar/one_google_bar_loader_impl.cc
-+++ b/chrome/browser/new_tab_page/one_google_bar/one_google_bar_loader_impl.cc
+Index: src/chrome/browser/new_tab_page/one_google_bar/one_google_bar_loader_impl.cc
+===================================================================
+--- src.orig/chrome/browser/new_tab_page/one_google_bar/one_google_bar_loader_impl.cc
++++ src/chrome/browser/new_tab_page/one_google_bar/one_google_bar_loader_impl.cc
 @@ -291,6 +291,7 @@ OneGoogleBarLoaderImpl::OneGoogleBarLoad
  OneGoogleBarLoaderImpl::~OneGoogleBarLoaderImpl() = default;
  
@@ -16,8 +18,10 @@
    callbacks_.push_back(std::move(callback));
  
    // Note: If there is an ongoing request, abandon it. It's possible that
---- a/chrome/browser/new_tab_page/promos/promo_service.cc
-+++ b/chrome/browser/new_tab_page/promos/promo_service.cc
+Index: src/chrome/browser/new_tab_page/promos/promo_service.cc
+===================================================================
+--- src.orig/chrome/browser/new_tab_page/promos/promo_service.cc
++++ src/chrome/browser/new_tab_page/promos/promo_service.cc
 @@ -167,6 +167,7 @@ PromoService::PromoService(
  PromoService::~PromoService() = default;
  
@@ -26,8 +30,10 @@
    std::string command_id;
    // Replace the promo URL with "command:<id>" if such a command ID is set
    // via the feature params.
---- a/chrome/browser/profile_resetter/profile_resetter.cc
-+++ b/chrome/browser/profile_resetter/profile_resetter.cc
+Index: src/chrome/browser/profile_resetter/profile_resetter.cc
+===================================================================
+--- src.orig/chrome/browser/profile_resetter/profile_resetter.cc
++++ src/chrome/browser/profile_resetter/profile_resetter.cc
 @@ -101,17 +101,6 @@ ProfileResetter::ProfileResetter(Profile
        cookies_remover_(nullptr) {
    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
@@ -46,8 +52,10 @@
  }
  
  void ProfileResetter::OnDefaultSettingsFetched() {
---- a/chrome/browser/spellchecker/spellcheck_hunspell_dictionary.cc
-+++ b/chrome/browser/spellchecker/spellcheck_hunspell_dictionary.cc
+Index: src/chrome/browser/spellchecker/spellcheck_hunspell_dictionary.cc
+===================================================================
+--- src.orig/chrome/browser/spellchecker/spellcheck_hunspell_dictionary.cc
++++ src/chrome/browser/spellchecker/spellcheck_hunspell_dictionary.cc
 @@ -285,6 +285,7 @@ GURL SpellcheckHunspellDictionary::GetDi
  }
  
@@ -56,8 +64,10 @@
    DCHECK_CURRENTLY_ON(BrowserThread::UI);
    DCHECK(browser_context_);
  
---- a/components/affiliations/core/browser/hash_affiliation_fetcher.cc
-+++ b/components/affiliations/core/browser/hash_affiliation_fetcher.cc
+Index: src/components/affiliations/core/browser/hash_affiliation_fetcher.cc
+===================================================================
+--- src.orig/components/affiliations/core/browser/hash_affiliation_fetcher.cc
++++ src/components/affiliations/core/browser/hash_affiliation_fetcher.cc
 @@ -131,6 +131,10 @@ HashAffiliationFetcher::~HashAffiliation
  }
  
@@ -69,8 +79,10 @@
      const std::vector<FacetURI>& facet_uris,
      RequestInfo request_info,
      base::OnceCallback<void(FetchResult)> result_callback) {
---- a/components/affiliations/core/browser/hash_affiliation_fetcher.h
-+++ b/components/affiliations/core/browser/hash_affiliation_fetcher.h
+Index: src/components/affiliations/core/browser/hash_affiliation_fetcher.h
+===================================================================
+--- src.orig/components/affiliations/core/browser/hash_affiliation_fetcher.h
++++ src/components/affiliations/core/browser/hash_affiliation_fetcher.h
 @@ -41,6 +41,8 @@ class HashAffiliationFetcher : public Af
        const std::vector<FacetURI>& facet_uris,
        RequestInfo request_info,
@@ -80,8 +92,10 @@
    const std::vector<FacetURI>& GetRequestedFacetURIs() const override;
  
    // Builds the URL for the Affiliation API's lookup method.
---- a/components/assist_ranker/ranker_url_fetcher.cc
-+++ b/components/assist_ranker/ranker_url_fetcher.cc
+Index: src/components/assist_ranker/ranker_url_fetcher.cc
+===================================================================
+--- src.orig/components/assist_ranker/ranker_url_fetcher.cc
++++ src/components/assist_ranker/ranker_url_fetcher.cc
 @@ -35,6 +35,7 @@ bool RankerURLFetcher::Request(
      const GURL& url,
      RankerURLFetcher::Callback callback,
@@ -90,8 +104,10 @@
    // This function is not supposed to be called if the previous operation is not
    // finished.
    if (state_ == REQUESTING) {
---- a/components/themes/ntp_background_service.cc
-+++ b/components/themes/ntp_background_service.cc
+Index: src/components/themes/ntp_background_service.cc
+===================================================================
+--- src.orig/components/themes/ntp_background_service.cc
++++ src/components/themes/ntp_background_service.cc
 @@ -92,9 +92,7 @@ void NtpBackgroundService::Shutdown() {
  void NtpBackgroundService::FetchCollectionInfo(
      const std::string& filtering_label) {
@@ -102,8 +118,10 @@
    collection_error_info_.ClearError();
  
    net::NetworkTrafficAnnotationTag traffic_annotation =
---- a/components/update_client/update_checker.cc
-+++ b/components/update_client/update_checker.cc
+Index: src/components/update_client/update_checker.cc
+===================================================================
+--- src.orig/components/update_client/update_checker.cc
++++ src/components/update_client/update_checker.cc
 @@ -106,6 +106,7 @@ void UpdateCheckerImpl::CheckForUpdates(
      scoped_refptr<UpdateContext> context,
      const base::flat_map<std::string, std::string>& additional_attributes,
@@ -112,8 +130,10 @@
    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
  
    update_check_callback_ = std::move(update_check_callback);
---- a/third_party/devtools-frontend/src/front_end/panels/elements/WebCustomData.ts
-+++ b/third_party/devtools-frontend/src/front_end/panels/elements/WebCustomData.ts
+Index: src/third_party/devtools-frontend/src/front_end/panels/elements/WebCustomData.ts
+===================================================================
+--- src.orig/third_party/devtools-frontend/src/front_end/panels/elements/WebCustomData.ts
++++ src/third_party/devtools-frontend/src/front_end/panels/elements/WebCustomData.ts
 @@ -2,7 +2,6 @@
  // Use of this source code is governed by a BSD-style license that can be
  // found in the LICENSE file.

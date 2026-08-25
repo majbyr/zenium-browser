@@ -1,5 +1,7 @@
---- a/chrome/browser/BUILD.gn
-+++ b/chrome/browser/BUILD.gn
+Index: src/chrome/browser/BUILD.gn
+===================================================================
+--- src.orig/chrome/browser/BUILD.gn
++++ src/chrome/browser/BUILD.gn
 @@ -4446,6 +4446,10 @@ source_set("browser") {
        # ... get modularized.
        "//chrome/browser/ui/extensions:impl",

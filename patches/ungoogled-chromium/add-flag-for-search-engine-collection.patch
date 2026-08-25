@@ -1,7 +1,9 @@
 # Add flag to disable automatic search engine collection
 
---- a/chrome/browser/ui/tab_helpers.cc
-+++ b/chrome/browser/ui/tab_helpers.cc
+Index: src/chrome/browser/ui/tab_helpers.cc
+===================================================================
+--- src.orig/chrome/browser/ui/tab_helpers.cc
++++ src/chrome/browser/ui/tab_helpers.cc
 @@ -594,7 +594,9 @@ void TabHelpers::AttachTabHelpers(WebCon
        profile, web_contents);
  #endif  // BUILDFLAG(SAFE_BROWSING_AVAILABLE)
@@ -12,8 +14,10 @@
  #if BUILDFLAG(ENABLE_DICE_SUPPORT)
    if (base::FeatureList::IsEnabled(switches::kEnableSearchAIModeSigninPromo) &&
        base::FeatureList::IsEnabled(contextual_tasks::kContextualTasks)) {
---- a/chrome/browser/ungoogled_flag_entries.h
-+++ b/chrome/browser/ungoogled_flag_entries.h
+Index: src/chrome/browser/ungoogled_flag_entries.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_entries.h
++++ src/chrome/browser/ungoogled_flag_entries.h
 @@ -12,4 +12,8 @@
       "Handling of extension MIME type requests",
       "Used when deciding how to handle a request for a CRX or User Script MIME type. ungoogled-chromium flag.",
@@ -23,8 +27,10 @@
 +     "Prevents search engines from being added automatically. ungoogled-chromium flag.",
 +     kOsAll, SINGLE_VALUE_TYPE("disable-search-engine-collection")},
  #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_ENTRIES_H_
---- a/chrome/renderer/chrome_render_frame_observer.cc
-+++ b/chrome/renderer/chrome_render_frame_observer.cc
+Index: src/chrome/renderer/chrome_render_frame_observer.cc
+===================================================================
+--- src.orig/chrome/renderer/chrome_render_frame_observer.cc
++++ src/chrome/renderer/chrome_render_frame_observer.cc
 @@ -279,14 +279,16 @@ void ChromeRenderFrameObserver::DidFinis
    if (frame->Parent() || frame->IsInFencedFrameTree())
      return;
@@ -50,8 +56,10 @@
    }
  }
  
---- a/components/search_engines/template_url_service.cc
-+++ b/components/search_engines/template_url_service.cc
+Index: src/components/search_engines/template_url_service.cc
+===================================================================
+--- src.orig/components/search_engines/template_url_service.cc
++++ src/components/search_engines/template_url_service.cc
 @@ -15,6 +15,7 @@
  #include "base/base64url.h"
  #include "base/check_deref.h"
@@ -111,8 +119,10 @@
    const TemplateURLSet* urls = provider_map_->GetURLsForHost(host);
    if (!urls) {
      return true;
---- a/components/search_engines/template_url_service.h
-+++ b/components/search_engines/template_url_service.h
+Index: src/components/search_engines/template_url_service.h
+===================================================================
+--- src.orig/components/search_engines/template_url_service.h
++++ src/components/search_engines/template_url_service.h
 @@ -967,6 +967,8 @@ class TemplateURLService final : public
  
    raw_ref<TemplateURLPrepopulateData::Resolver> prepopulate_data_resolver_;

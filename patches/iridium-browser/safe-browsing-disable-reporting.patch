@@ -19,8 +19,10 @@ information about a blocked URL to Google (also added a trk prefix to
 the URL so we get notified if this happens again in the future).
 ---
 
---- a/components/safe_browsing/content/browser/client_side_detection_service.cc
-+++ b/components/safe_browsing/content/browser/client_side_detection_service.cc
+Index: src/components/safe_browsing/content/browser/client_side_detection_service.cc
+===================================================================
+--- src.orig/components/safe_browsing/content/browser/client_side_detection_service.cc
++++ src/components/safe_browsing/content/browser/client_side_detection_service.cc
 @@ -272,6 +272,10 @@ void ClientSideDetectionService::StartCl
      return;
    }
@@ -40,8 +42,10 @@ the URL so we get notified if this happens again in the future).
  }
  
  void ClientSideDetectionService::HandlePhishingVerdict(
---- a/chrome/browser/safe_browsing/chrome_safe_browsing_blocking_page_factory.cc
-+++ b/chrome/browser/safe_browsing/chrome_safe_browsing_blocking_page_factory.cc
+Index: src/chrome/browser/safe_browsing/chrome_safe_browsing_blocking_page_factory.cc
+===================================================================
+--- src.orig/chrome/browser/safe_browsing/chrome_safe_browsing_blocking_page_factory.cc
++++ src/chrome/browser/safe_browsing/chrome_safe_browsing_blocking_page_factory.cc
 @@ -63,8 +63,7 @@ ChromeSafeBrowsingBlockingPageFactory::C
        Profile::FromBrowserContext(web_contents->GetBrowserContext());
    // Create appropriate display options for this blocking page.
@@ -52,8 +56,10 @@ the URL so we get notified if this happens again in the future).
    bool is_proceed_anyway_disabled = IsSafeBrowsingProceedAnywayDisabled(*prefs);
  
    // Determine if any prefs need to be updated prior to showing the security
---- a/chrome/browser/safe_browsing/incident_reporting/incident_report_uploader_impl.cc
-+++ b/chrome/browser/safe_browsing/incident_reporting/incident_report_uploader_impl.cc
+Index: src/chrome/browser/safe_browsing/incident_reporting/incident_report_uploader_impl.cc
+===================================================================
+--- src.orig/chrome/browser/safe_browsing/incident_reporting/incident_report_uploader_impl.cc
++++ src/chrome/browser/safe_browsing/incident_reporting/incident_report_uploader_impl.cc
 @@ -29,7 +29,7 @@ namespace safe_browsing {
  namespace {
  
@@ -63,8 +69,10 @@ the URL so we get notified if this happens again in the future).
  
  constexpr net::NetworkTrafficAnnotationTag
      kSafeBrowsingIncidentTrafficAnnotation =
---- a/chrome/browser/safe_browsing/incident_reporting/incident_reporting_service.cc
-+++ b/chrome/browser/safe_browsing/incident_reporting/incident_reporting_service.cc
+Index: src/chrome/browser/safe_browsing/incident_reporting/incident_reporting_service.cc
+===================================================================
+--- src.orig/chrome/browser/safe_browsing/incident_reporting/incident_reporting_service.cc
++++ src/chrome/browser/safe_browsing/incident_reporting/incident_reporting_service.cc
 @@ -302,11 +302,14 @@ IncidentReportingService::UploadContext:
  
  // static
@@ -80,8 +88,10 @@ the URL so we get notified if this happens again in the future).
  }
  
  IncidentReportingService::IncidentReportingService(
---- a/chrome/browser/safe_browsing/safe_browsing_service.cc
-+++ b/chrome/browser/safe_browsing/safe_browsing_service.cc
+Index: src/chrome/browser/safe_browsing/safe_browsing_service.cc
+===================================================================
+--- src.orig/chrome/browser/safe_browsing/safe_browsing_service.cc
++++ src/chrome/browser/safe_browsing/safe_browsing_service.cc
 @@ -501,7 +501,7 @@ SafeBrowsingUIManager* SafeBrowsingServi
  }
  
@@ -91,8 +101,10 @@ the URL so we get notified if this happens again in the future).
    RegisterBinaryIntegrityAnalysis();
  #endif
  }
---- a/components/security_interstitials/core/safe_browsing_loud_error_ui.cc
-+++ b/components/security_interstitials/core/safe_browsing_loud_error_ui.cc
+Index: src/components/security_interstitials/core/safe_browsing_loud_error_ui.cc
+===================================================================
+--- src.orig/components/security_interstitials/core/safe_browsing_loud_error_ui.cc
++++ src/components/security_interstitials/core/safe_browsing_loud_error_ui.cc
 @@ -27,11 +27,11 @@ namespace {
  // For malware interstitial pages, we link the problematic URL to Google's
  // diagnostic page.

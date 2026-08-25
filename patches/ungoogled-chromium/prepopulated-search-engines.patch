@@ -1,7 +1,9 @@
 # Disables Site search Starter Pack
 #
---- a/components/omnibox/common/omnibox_features.cc
-+++ b/components/omnibox/common/omnibox_features.cc
+Index: src/components/omnibox/common/omnibox_features.cc
+===================================================================
+--- src.orig/components/omnibox/common/omnibox_features.cc
++++ src/components/omnibox/common/omnibox_features.cc
 @@ -300,7 +300,7 @@ BASE_FEATURE(kOmniboxTouchDownTriggerFor
  BASE_FEATURE(kOmniboxSiteSearch, DISABLED);
  

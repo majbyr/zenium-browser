@@ -1,8 +1,10 @@
 # Add suggestions URL text field to the search engine editing dialog
 # (chrome://settings/searchEngines).
 
---- a/chrome/browser/resources/settings/search_page/search_engine_edit_dialog.html
-+++ b/chrome/browser/resources/settings/search_page/search_engine_edit_dialog.html
+Index: src/chrome/browser/resources/settings/search_page/search_engine_edit_dialog.html
+===================================================================
+--- src.orig/chrome/browser/resources/settings/search_page/search_engine_edit_dialog.html
++++ src/chrome/browser/resources/settings/search_page/search_engine_edit_dialog.html
 @@ -35,6 +35,13 @@
              error-message="$i18n{notValid}"
              value="{{queryUrl_}}" on-focus="validate_" on-input="validate_">
@@ -17,8 +19,10 @@
        </div>
        <div slot="button-container">
          <cr-button class="cancel-button" on-click="cancel_" id="cancel"
---- a/chrome/browser/resources/settings/search_page/search_engine_edit_dialog.ts
-+++ b/chrome/browser/resources/settings/search_page/search_engine_edit_dialog.ts
+Index: src/chrome/browser/resources/settings/search_page/search_engine_edit_dialog.ts
+===================================================================
+--- src.orig/chrome/browser/resources/settings/search_page/search_engine_edit_dialog.ts
++++ src/chrome/browser/resources/settings/search_page/search_engine_edit_dialog.ts
 @@ -35,6 +35,7 @@ export interface SettingsSearchEngineEdi
      dialog: CrDialogElement,
      keyword: CrInputElement,
@@ -88,8 +92,10 @@
      });
      this.$.actionButton.disabled = !allValid;
    }
---- a/chrome/browser/resources/settings/search_page/search_engines_browser_proxy.ts
-+++ b/chrome/browser/resources/settings/search_page/search_engines_browser_proxy.ts
+Index: src/chrome/browser/resources/settings/search_page/search_engines_browser_proxy.ts
+===================================================================
+--- src.orig/chrome/browser/resources/settings/search_page/search_engines_browser_proxy.ts
++++ src/chrome/browser/resources/settings/search_page/search_engines_browser_proxy.ts
 @@ -34,6 +34,7 @@ export interface SearchEngine {
    name: string;
    shouldConfirmRemoval: boolean;
@@ -121,8 +127,10 @@
      ]);
    }
  
---- a/chrome/browser/ui/search_engines/edit_search_engine_controller.cc
-+++ b/chrome/browser/ui/search_engines/edit_search_engine_controller.cc
+Index: src/chrome/browser/ui/search_engines/edit_search_engine_controller.cc
+===================================================================
+--- src.orig/chrome/browser/ui/search_engines/edit_search_engine_controller.cc
++++ src/chrome/browser/ui/search_engines/edit_search_engine_controller.cc
 @@ -39,6 +39,19 @@ bool EditSearchEngineController::IsURLVa
    return IsSearchEngineURLValidToUse(url_input, service, template_url_);
  }
@@ -172,8 +180,10 @@
    }
  }
  
---- a/chrome/browser/ui/search_engines/edit_search_engine_controller.h
-+++ b/chrome/browser/ui/search_engines/edit_search_engine_controller.h
+Index: src/chrome/browser/ui/search_engines/edit_search_engine_controller.h
+===================================================================
+--- src.orig/chrome/browser/ui/search_engines/edit_search_engine_controller.h
++++ src/chrome/browser/ui/search_engines/edit_search_engine_controller.h
 @@ -22,7 +22,8 @@ class EditSearchEngineControllerDelegate
    virtual void OnEditedKeyword(TemplateURL* template_url,
                                 const std::u16string& title,
@@ -203,8 +213,10 @@
  
    // Deletes an unused TemplateURL, if its add was cancelled and it's not
    // already owned by the TemplateURLService.
---- a/chrome/browser/ui/search_engines/keyword_editor_controller.cc
-+++ b/chrome/browser/ui/search_engines/keyword_editor_controller.cc
+Index: src/chrome/browser/ui/search_engines/keyword_editor_controller.cc
+===================================================================
+--- src.orig/chrome/browser/ui/search_engines/keyword_editor_controller.cc
++++ src/chrome/browser/ui/search_engines/keyword_editor_controller.cc
 @@ -31,7 +31,8 @@ bool ShouldUpdateTemplateURL(TemplateURL
                               TemplateURL* template_url,
                               const std::u16string& title,
@@ -266,8 +278,10 @@
  
    base::RecordAction(UserMetricsAction("KeywordEditor_ModifiedKeyword"));
  }
---- a/chrome/browser/ui/search_engines/keyword_editor_controller.h
-+++ b/chrome/browser/ui/search_engines/keyword_editor_controller.h
+Index: src/chrome/browser/ui/search_engines/keyword_editor_controller.h
+===================================================================
+--- src.orig/chrome/browser/ui/search_engines/keyword_editor_controller.h
++++ src/chrome/browser/ui/search_engines/keyword_editor_controller.h
 @@ -35,14 +35,16 @@ class KeywordEditorController {
    // model. Returns the id of the added URL.
    TemplateURLID AddTemplateURL(const std::u16string& title,
@@ -287,8 +301,10 @@
  
    // Return true if the given |url| can be edited.
    bool CanEdit(const TemplateURL* url) const;
---- a/chrome/browser/ui/webui/settings/search_engines_handler.cc
-+++ b/chrome/browser/ui/webui/settings/search_engines_handler.cc
+Index: src/chrome/browser/ui/webui/settings/search_engines_handler.cc
+===================================================================
+--- src.orig/chrome/browser/ui/webui/settings/search_engines_handler.cc
++++ src/chrome/browser/ui/webui/settings/search_engines_handler.cc
 @@ -63,6 +63,7 @@ namespace {
  const char kSearchEngineField[] = "searchEngine";
  const char kKeywordField[] = "keyword";
@@ -358,8 +374,10 @@
    }
  }
  
---- a/chrome/browser/ui/webui/settings/search_engines_handler.h
-+++ b/chrome/browser/ui/webui/settings/search_engines_handler.h
+Index: src/chrome/browser/ui/webui/settings/search_engines_handler.h
+===================================================================
+--- src.orig/chrome/browser/ui/webui/settings/search_engines_handler.h
++++ src/chrome/browser/ui/webui/settings/search_engines_handler.h
 @@ -38,7 +38,8 @@ class SearchEnginesHandler : public Sett
    void OnEditedKeyword(TemplateURL* template_url,
                         const std::u16string& title,
@@ -381,8 +399,10 @@
    bool CheckFieldValidity(const std::string& field_name,
                            const std::string& field_value);
  
---- a/components/search_engines/template_url_service.cc
-+++ b/components/search_engines/template_url_service.cc
+Index: src/components/search_engines/template_url_service.cc
+===================================================================
+--- src.orig/components/search_engines/template_url_service.cc
++++ src/components/search_engines/template_url_service.cc
 @@ -1058,7 +1058,8 @@ void TemplateURLService::IncrementUsageC
  void TemplateURLService::ResetTemplateURL(TemplateURL* url,
                                            const std::u16string& title,
@@ -401,8 +421,10 @@
  
    Update(url, base::FeatureList::IsEnabled(
                    syncer::kSeparateLocalAndAccountSearchEngines)
---- a/components/search_engines/template_url_service.h
-+++ b/components/search_engines/template_url_service.h
+Index: src/components/search_engines/template_url_service.h
+===================================================================
+--- src.orig/components/search_engines/template_url_service.h
++++ src/components/search_engines/template_url_service.h
 @@ -376,7 +376,8 @@ class TemplateURLService final : public
    void ResetTemplateURL(TemplateURL* url,
                          const std::u16string& title,

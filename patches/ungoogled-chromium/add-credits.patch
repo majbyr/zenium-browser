@@ -1,5 +1,7 @@
---- a/components/webui/about/resources/about_credits_reciprocal.tmpl
-+++ b/components/webui/about/resources/about_credits_reciprocal.tmpl
+Index: src/components/webui/about/resources/about_credits_reciprocal.tmpl
+===================================================================
+--- src.orig/components/webui/about/resources/about_credits_reciprocal.tmpl
++++ src/components/webui/about/resources/about_credits_reciprocal.tmpl
 @@ -1,4 +1,4 @@
  <div class="open-sourced">
 -    {{opensource_project}} software is made available as source code
@@ -7,8 +9,10 @@
 +    {{opensource_project}} source code is available in
 +    the <a href="{{opensource_link}}">repository</a>.
  </div>
+Index: src/third_party/ungoogled-chromium/LICENSE
+===================================================================
 --- /dev/null
-+++ b/third_party/ungoogled-chromium/LICENSE
++++ src/third_party/ungoogled-chromium/LICENSE
 @@ -0,0 +1,29 @@
 +BSD 3-Clause License
 +
@@ -39,8 +43,10 @@
 +CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 +OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 +OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
---- a/tools/licenses/licenses.py
-+++ b/tools/licenses/licenses.py
+Index: src/tools/licenses/licenses.py
+===================================================================
+--- src.orig/tools/licenses/licenses.py
++++ src/tools/licenses/licenses.py
 @@ -57,6 +57,14 @@ _CHROMIUM_LICENSE_METADATA = {
      'dir': '',  # Relative to _REPOSITORY_ROOT
  }

@@ -1,7 +1,9 @@
 # Disable Google Cloud Messaging (GCM) client
 
---- a/components/gcm_driver/gcm_client_impl.cc
-+++ b/components/gcm_driver/gcm_client_impl.cc
+Index: src/components/gcm_driver/gcm_client_impl.cc
+===================================================================
+--- src.orig/components/gcm_driver/gcm_client_impl.cc
++++ src/components/gcm_driver/gcm_client_impl.cc
 @@ -296,38 +296,6 @@ void GCMClientImpl::Initialize(
  }
  
@@ -154,8 +156,10 @@
  }
  
  std::string GCMClientImpl::GetStateString() const {
---- a/components/gcm_driver/gcm_driver_desktop.cc
-+++ b/components/gcm_driver/gcm_driver_desktop.cc
+Index: src/components/gcm_driver/gcm_driver_desktop.cc
+===================================================================
+--- src.orig/components/gcm_driver/gcm_driver_desktop.cc
++++ src/components/gcm_driver/gcm_driver_desktop.cc
 @@ -1189,25 +1189,7 @@ GCMClient::Result GCMDriverDesktop::Ensu
      GCMClient::StartMode start_mode) {
    DCHECK(ui_thread_->RunsTasksInCurrentSequence());

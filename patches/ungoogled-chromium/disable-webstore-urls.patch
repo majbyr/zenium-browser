@@ -1,7 +1,9 @@
 # Disables Chrome Webstore-related URLs and other internal functionality. Mainly for disabling auto updates via the Chrome Webstore.
 
---- a/chrome/browser/extensions/chrome_content_browser_client_extensions_part.cc
-+++ b/chrome/browser/extensions/chrome_content_browser_client_extensions_part.cc
+Index: src/chrome/browser/extensions/chrome_content_browser_client_extensions_part.cc
+===================================================================
+--- src.orig/chrome/browser/extensions/chrome_content_browser_client_extensions_part.cc
++++ src/chrome/browser/extensions/chrome_content_browser_client_extensions_part.cc
 @@ -683,12 +683,6 @@ std::vector<url::Origin> ChromeContentBr
      GetOriginsRequiringDedicatedProcess() {
    std::vector<url::Origin> list;
@@ -15,8 +17,10 @@
    return list;
  }
  
---- a/chrome/browser/extensions/chrome_content_verifier_delegate.cc
-+++ b/chrome/browser/extensions/chrome_content_verifier_delegate.cc
+Index: src/chrome/browser/extensions/chrome_content_verifier_delegate.cc
+===================================================================
+--- src.orig/chrome/browser/extensions/chrome_content_verifier_delegate.cc
++++ src/chrome/browser/extensions/chrome_content_verifier_delegate.cc
 @@ -305,17 +305,7 @@ bool ChromeContentVerifierDelegate::IsFr
    // between which extensions are considered in-store.
    // See https://crbug.com/40540778 for details.
@@ -36,8 +40,10 @@
    }
    return true;
  }
---- a/chrome/browser/extensions/extension_migrator.cc
-+++ b/chrome/browser/extensions/extension_migrator.cc
+Index: src/chrome/browser/extensions/extension_migrator.cc
+===================================================================
+--- src.orig/chrome/browser/extensions/extension_migrator.cc
++++ src/chrome/browser/extensions/extension_migrator.cc
 @@ -22,7 +22,9 @@ namespace extensions {
  ExtensionMigrator::ExtensionMigrator(Profile* profile,
                                       const std::string& old_id,
@@ -58,8 +64,10 @@
  
      prefs.Set(new_id_, std::move(entry));
    }
---- a/chrome/browser/extensions/extension_migrator.h
-+++ b/chrome/browser/extensions/extension_migrator.h
+Index: src/chrome/browser/extensions/extension_migrator.h
+===================================================================
+--- src.orig/chrome/browser/extensions/extension_migrator.h
++++ src/chrome/browser/extensions/extension_migrator.h
 @@ -10,6 +10,7 @@
  #include "base/memory/raw_ptr.h"
  #include "chrome/browser/extensions/external_loader.h"
@@ -76,8 +84,10 @@
  };
  
  }  // namespace extensions
---- a/extensions/browser/updater/extension_downloader.cc
-+++ b/extensions/browser/updater/extension_downloader.cc
+Index: src/extensions/browser/updater/extension_downloader.cc
+===================================================================
+--- src.orig/extensions/browser/updater/extension_downloader.cc
++++ src/extensions/browser/updater/extension_downloader.cc
 @@ -93,25 +93,16 @@ const char kNotFromWebstoreInstallSource
  const char kDefaultInstallSource[] = "";
  const char kReinstallInstallSource[] = "reinstall";
@@ -171,8 +181,10 @@
        return true;
      case ExtensionFetch::CREDENTIALS_OAUTH2_TOKEN:
        fetch->oauth2_attempt_count++;
---- a/extensions/common/extension_urls.cc
-+++ b/extensions/common/extension_urls.cc
+Index: src/extensions/common/extension_urls.cc
+===================================================================
+--- src.orig/extensions/common/extension_urls.cc
++++ src/extensions/common/extension_urls.cc
 @@ -82,8 +82,6 @@ GURL AppendUtmSource(const GURL& url, st
  
  GURL GetWebstoreExtensionsCategoryURL() {

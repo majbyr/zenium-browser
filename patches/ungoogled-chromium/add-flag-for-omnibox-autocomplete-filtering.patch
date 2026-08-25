@@ -1,5 +1,7 @@
---- a/chrome/browser/ungoogled_flag_choices.h
-+++ b/chrome/browser/ungoogled_flag_choices.h
+Index: src/chrome/browser/ungoogled_flag_choices.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_choices.h
++++ src/chrome/browser/ungoogled_flag_choices.h
 @@ -40,4 +40,19 @@ const FeatureEntry::Choice kBookmarkBarN
       "bookmark-bar-ntp",
       "never"},
@@ -20,8 +22,10 @@
 +     "search-bookmarks-chrome"},
 +};
  #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_CHOICES_H_
---- a/chrome/browser/ungoogled_flag_entries.h
-+++ b/chrome/browser/ungoogled_flag_entries.h
+Index: src/chrome/browser/ungoogled_flag_entries.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_entries.h
++++ src/chrome/browser/ungoogled_flag_entries.h
 @@ -40,4 +40,8 @@
       "Bookmark Bar on New-Tab-Page",
       "Disable the Bookmark Bar on the New-Tab-Page. ungoogled-chromium flag.",
@@ -31,8 +35,10 @@
 +     "Restrict omnibox autocomplete results to a combination of search suggestions (if enabled), bookmarks, and internal chrome pages. ungoogled-chromium flag.",
 +     kOsAll, MULTI_VALUE_TYPE(kOmniboxAutocompleteFiltering)},
  #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_ENTRIES_H_
---- a/components/omnibox/browser/autocomplete_controller.cc
-+++ b/components/omnibox/browser/autocomplete_controller.cc
+Index: src/components/omnibox/browser/autocomplete_controller.cc
+===================================================================
+--- src.orig/components/omnibox/browser/autocomplete_controller.cc
++++ src/components/omnibox/browser/autocomplete_controller.cc
 @@ -22,6 +22,7 @@
  #include <utility>
  
@@ -57,8 +63,10 @@
  
    // Providers run in the order they're added. Async providers should run first
    // so their async requests can be kicked off before waiting a few milliseconds
---- a/components/omnibox/browser/history_url_provider.cc
-+++ b/components/omnibox/browser/history_url_provider.cc
+Index: src/components/omnibox/browser/history_url_provider.cc
+===================================================================
+--- src.orig/components/omnibox/browser/history_url_provider.cc
++++ src/components/omnibox/browser/history_url_provider.cc
 @@ -487,6 +487,9 @@ void HistoryURLProvider::Start(const Aut
    if (fixed_up_input.type() != metrics::OmniboxInputType::QUERY)
      matches_.push_back(what_you_typed_match);
@@ -69,8 +77,10 @@
    // We'll need the history service to run both passes, so try to obtain it.
    history::HistoryService* const history_service =
        client()->GetHistoryService();
---- a/components/omnibox/browser/search_provider.cc
-+++ b/components/omnibox/browser/search_provider.cc
+Index: src/components/omnibox/browser/search_provider.cc
+===================================================================
+--- src.orig/components/omnibox/browser/search_provider.cc
++++ src/components/omnibox/browser/search_provider.cc
 @@ -15,6 +15,7 @@
  #include <vector>
  
@@ -89,8 +99,10 @@
    // The history query results are synchronous, so if minimal_changes is true,
    // we still have the last results and don't need to do anything.
    if (minimal_changes)
---- a/components/url_formatter/url_fixer.cc
-+++ b/components/url_formatter/url_fixer.cc
+Index: src/components/url_formatter/url_fixer.cc
+===================================================================
+--- src.orig/components/url_formatter/url_fixer.cc
++++ src/components/url_formatter/url_fixer.cc
 @@ -10,6 +10,7 @@
  #include <string_view>
  

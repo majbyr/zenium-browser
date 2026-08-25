@@ -14,8 +14,10 @@ Auto-Submit: Fumitoshi Ukai <ukai@google.com>
 Cr-Commit-Position: refs/heads/main@{#1655184}
 ---
 
---- a/tools/metrics/BUILD.gn
-+++ b/tools/metrics/BUILD.gn
+Index: src/tools/metrics/BUILD.gn
+===================================================================
+--- src.orig/tools/metrics/BUILD.gn
++++ src/tools/metrics/BUILD.gn
 @@ -41,11 +41,11 @@ group("metrics_metadata") {
    ]
  

@@ -1,5 +1,7 @@
---- a/chrome/browser/ui/browser_commands.cc
-+++ b/chrome/browser/ui/browser_commands.cc
+Index: src/chrome/browser/ui/browser_commands.cc
+===================================================================
+--- src.orig/chrome/browser/ui/browser_commands.cc
++++ src/chrome/browser/ui/browser_commands.cc
 @@ -1265,9 +1265,6 @@ void NewTabToRight(BrowserWindowInterfac
  }
  
@@ -19,8 +21,10 @@
  }
  
  void CloseTab(BrowserWindowInterface* browser) {
---- a/chrome/browser/ui/views/frame/horizontal_tab_strip_region_view.cc
-+++ b/chrome/browser/ui/views/frame/horizontal_tab_strip_region_view.cc
+Index: src/chrome/browser/ui/views/frame/horizontal_tab_strip_region_view.cc
+===================================================================
+--- src.orig/chrome/browser/ui/views/frame/horizontal_tab_strip_region_view.cc
++++ src/chrome/browser/ui/views/frame/horizontal_tab_strip_region_view.cc
 @@ -251,13 +251,11 @@ HorizontalTabStripRegionView::Horizontal
      new_tab_button_->GetViewAccessibility().SetName(
          l10n_util::GetStringUTF16(IDS_ACCNAME_NEWTAB));

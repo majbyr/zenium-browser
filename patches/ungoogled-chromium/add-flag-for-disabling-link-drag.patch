@@ -1,5 +1,7 @@
---- a/chrome/browser/ungoogled_flag_entries.h
-+++ b/chrome/browser/ungoogled_flag_entries.h
+Index: src/chrome/browser/ungoogled_flag_entries.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_entries.h
++++ src/chrome/browser/ungoogled_flag_entries.h
 @@ -84,4 +84,8 @@
       "Custom HTTP Accept Header",
       "Set a custom value for the Accept header which is sent by the browser with every HTTP request.  (e.g. `text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8`). ungoogled-chromium flag.",
@@ -9,8 +11,10 @@
 +     "Prevents dragging of links and selected text. ungoogled-chromium flag.",
 +     kOsDesktop, FEATURE_VALUE_TYPE(blink::features::kDisableLinkDrag)},
  #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_ENTRIES_H_
---- a/third_party/blink/common/features.cc
-+++ b/third_party/blink/common/features.cc
+Index: src/third_party/blink/common/features.cc
+===================================================================
+--- src.orig/third_party/blink/common/features.cc
++++ src/third_party/blink/common/features.cc
 @@ -19,6 +19,8 @@
  
  namespace blink::features {
@@ -20,8 +24,10 @@
  // -----------------------------------------------------------------------------
  // Feature definitions and associated constants (feature params, et cetera)
  //
---- a/third_party/blink/public/common/features.h
-+++ b/third_party/blink/public/common/features.h
+Index: src/third_party/blink/public/common/features.h
+===================================================================
+--- src.orig/third_party/blink/public/common/features.h
++++ src/third_party/blink/public/common/features.h
 @@ -20,6 +20,8 @@
  namespace blink {
  namespace features {
@@ -31,8 +37,10 @@
  // -----------------------------------------------------------------------------
  // Feature declarations and associated constants (feature params, et cetera)
  //
---- a/third_party/blink/renderer/core/editing/selection_controller.cc
-+++ b/third_party/blink/renderer/core/editing/selection_controller.cc
+Index: src/third_party/blink/renderer/core/editing/selection_controller.cc
+===================================================================
+--- src.orig/third_party/blink/renderer/core/editing/selection_controller.cc
++++ src/third_party/blink/renderer/core/editing/selection_controller.cc
 @@ -31,6 +31,7 @@
  
  #include "base/auto_reset.h"
@@ -56,8 +64,10 @@
  
  bool IsUserNodeDraggable(const MouseEventWithHitTestResults& event) {
    Node* inner_node = event.InnerNode();
---- a/third_party/blink/renderer/core/input/mouse_event_manager.cc
-+++ b/third_party/blink/renderer/core/input/mouse_event_manager.cc
+Index: src/third_party/blink/renderer/core/input/mouse_event_manager.cc
+===================================================================
+--- src.orig/third_party/blink/renderer/core/input/mouse_event_manager.cc
++++ src/third_party/blink/renderer/core/input/mouse_event_manager.cc
 @@ -6,6 +6,7 @@
  
  #include "base/metrics/histogram_functions.h"

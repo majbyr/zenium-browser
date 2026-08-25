@@ -7,8 +7,10 @@
 #
 # Unlike the latest Bromite patch, it was chosen to not regenerate the noise value each time the value is read to prevent potential efficiency issues with the load on the RNG.
 
---- a/chrome/browser/BUILD.gn
-+++ b/chrome/browser/BUILD.gn
+Index: src/chrome/browser/BUILD.gn
+===================================================================
+--- src.orig/chrome/browser/BUILD.gn
++++ src/chrome/browser/BUILD.gn
 @@ -2981,6 +2981,7 @@ source_set("browser") {
      "//third_party/libyuv",
      "//third_party/metrics_proto",
@@ -17,8 +19,10 @@
      "//third_party/webrtc_overrides:webrtc_component",
      "//third_party/widevine/cdm:buildflags",
      "//third_party/widevine/cdm:headers",
---- a/chrome/browser/about_flags.cc
-+++ b/chrome/browser/about_flags.cc
+Index: src/chrome/browser/about_flags.cc
+===================================================================
+--- src.orig/chrome/browser/about_flags.cc
++++ src/chrome/browser/about_flags.cc
 @@ -205,6 +205,7 @@
  #include "components/translate/core/common/translate_util.h"
  #include "components/trusted_vault/features.h"
@@ -27,8 +31,10 @@
  #include "components/variations/variations_switches.h"
  #include "components/version_info/channel.h"
  #include "components/version_info/version_info.h"
---- a/chrome/browser/bromite_flag_entries.h
-+++ b/chrome/browser/bromite_flag_entries.h
+Index: src/chrome/browser/bromite_flag_entries.h
+===================================================================
+--- src.orig/chrome/browser/bromite_flag_entries.h
++++ src/chrome/browser/bromite_flag_entries.h
 @@ -4,4 +4,12 @@
  
  #ifndef CHROME_BROWSER_BROMITE_FLAG_ENTRIES_H_
@@ -42,8 +48,10 @@
 +     "Scale the output values of Canvas::measureText() with a randomly selected factor in the range -0.0003% to 0.0003%, which are recomputed on every document initialization. ungoogled-chromium flag, Bromite feature.",
 +     kOsAll, SINGLE_VALUE_TYPE(switches::kFingerprintingCanvasMeasureTextNoise)},
  #endif  // CHROME_BROWSER_BROMITE_FLAG_ENTRIES_H_
---- a/content/browser/BUILD.gn
-+++ b/content/browser/BUILD.gn
+Index: src/content/browser/BUILD.gn
+===================================================================
+--- src.orig/content/browser/BUILD.gn
++++ src/content/browser/BUILD.gn
 @@ -330,6 +330,7 @@ source_set("browser") {
      "//third_party/re2",
      "//third_party/snappy",
@@ -52,8 +60,10 @@
      "//third_party/webrtc_overrides:webrtc_component",
      "//third_party/zlib",
      "//tools/v8_context_snapshot:buildflags",
---- a/content/browser/renderer_host/render_process_host_impl.cc
-+++ b/content/browser/renderer_host/render_process_host_impl.cc
+Index: src/content/browser/renderer_host/render_process_host_impl.cc
+===================================================================
+--- src.orig/content/browser/renderer_host/render_process_host_impl.cc
++++ src/content/browser/renderer_host/render_process_host_impl.cc
 @@ -84,6 +84,7 @@
  #include "components/services/storage/public/cpp/quota_error_or.h"
  #include "components/services/storage/public/mojom/cache_storage_control.mojom.h"
@@ -71,8 +81,10 @@
        switches::kForceDeviceScaleFactor,
        switches::kForceDisplayColorProfile,
        switches::kForceHighContrast,
---- a/content/child/BUILD.gn
-+++ b/content/child/BUILD.gn
+Index: src/content/child/BUILD.gn
+===================================================================
+--- src.orig/content/child/BUILD.gn
++++ src/content/child/BUILD.gn
 @@ -111,6 +111,7 @@ target(link_target_type, "child") {
      "//third_party/blink/public/common:buildflags",
      "//third_party/blink/public/strings",
@@ -81,8 +93,10 @@
      "//third_party/zlib/google:compression_utils",
      "//ui/base",
      "//ui/events/blink",
---- a/content/child/runtime_features.cc
-+++ b/content/child/runtime_features.cc
+Index: src/content/child/runtime_features.cc
+===================================================================
+--- src.orig/content/child/runtime_features.cc
++++ src/content/child/runtime_features.cc
 @@ -43,6 +43,7 @@
  #include "third_party/blink/public/common/loader/referrer_utils.h"
  #include "third_party/blink/public/common/switches.h"
@@ -102,8 +116,10 @@
    };
  
    for (const auto& mapping : switchToFeatureMapping) {
---- a/third_party/blink/public/platform/web_runtime_features.h
-+++ b/third_party/blink/public/platform/web_runtime_features.h
+Index: src/third_party/blink/public/platform/web_runtime_features.h
+===================================================================
+--- src.orig/third_party/blink/public/platform/web_runtime_features.h
++++ src/third_party/blink/public/platform/web_runtime_features.h
 @@ -71,6 +71,9 @@ class BLINK_PLATFORM_EXPORT WebRuntimeFe
  
    static void EnableLocalNetworkAccessWebRTC(bool);
@@ -114,8 +130,10 @@
    WebRuntimeFeatures() = delete;
  };
  
---- a/third_party/blink/renderer/core/dom/document.cc
-+++ b/third_party/blink/renderer/core/dom/document.cc
+Index: src/third_party/blink/renderer/core/dom/document.cc
+===================================================================
+--- src.orig/third_party/blink/renderer/core/dom/document.cc
++++ src/third_party/blink/renderer/core/dom/document.cc
 @@ -41,6 +41,7 @@
  #include "base/i18n/time_formatting.h"
  #include "base/metrics/histogram_functions.h"
@@ -151,8 +169,10 @@
  SelectorQueryCache& Document::GetSelectorQueryCache() {
    if (!selector_query_cache_)
      selector_query_cache_ = MakeGarbageCollected<SelectorQueryCache>();
---- a/third_party/blink/renderer/core/dom/document.h
-+++ b/third_party/blink/renderer/core/dom/document.h
+Index: src/third_party/blink/renderer/core/dom/document.h
+===================================================================
+--- src.orig/third_party/blink/renderer/core/dom/document.h
++++ src/third_party/blink/renderer/core/dom/document.h
 @@ -573,6 +573,10 @@ class CORE_EXPORT Document : public Cont
      has_xml_declaration_ = has_xml_declaration ? 1 : 0;
    }
@@ -174,8 +194,10 @@
    // The script runner is used to run scripts of the following scheduling types:
    // - ScriptSchedulingType::kAsync
    // - ScriptSchedulingType::kInOrder
---- a/third_party/blink/renderer/core/dom/element.cc
-+++ b/third_party/blink/renderer/core/dom/element.cc
+Index: src/third_party/blink/renderer/core/dom/element.cc
+===================================================================
+--- src.orig/third_party/blink/renderer/core/dom/element.cc
++++ src/third_party/blink/renderer/core/dom/element.cc
 @@ -3480,6 +3480,9 @@ Vector<gfx::RectF> Element::GetClientRec
    }
    Vector<gfx::RectF> result;
@@ -196,8 +218,10 @@
    return result;
  }
  
---- a/third_party/blink/renderer/core/dom/range.cc
-+++ b/third_party/blink/renderer/core/dom/range.cc
+Index: src/third_party/blink/renderer/core/dom/range.cc
+===================================================================
+--- src.orig/third_party/blink/renderer/core/dom/range.cc
++++ src/third_party/blink/renderer/core/dom/range.cc
 @@ -1664,6 +1664,12 @@ DOMRectList* Range::getClientRects() con
    Vector<gfx::QuadF> quads;
    GetBorderAndTextQuads(quads);
@@ -224,8 +248,10 @@
  }
  
  // TODO(editing-dev): We should make
---- a/third_party/blink/renderer/core/html/canvas/text_metrics.cc
-+++ b/third_party/blink/renderer/core/html/canvas/text_metrics.cc
+Index: src/third_party/blink/renderer/core/html/canvas/text_metrics.cc
+===================================================================
+--- src.orig/third_party/blink/renderer/core/html/canvas/text_metrics.cc
++++ src/third_party/blink/renderer/core/html/canvas/text_metrics.cc
 @@ -92,6 +92,24 @@ TextMetrics::TextMetrics(const Font* fon
    Update(font, direction, baseline, align, text, text_painter);
  }
@@ -251,8 +277,10 @@
  void TextMetrics::Update(const Font* font,
                           const TextDirection& direction,
                           const V8CanvasTextBaseline::Enum baseline,
---- a/third_party/blink/renderer/core/html/canvas/text_metrics.h
-+++ b/third_party/blink/renderer/core/html/canvas/text_metrics.h
+Index: src/third_party/blink/renderer/core/html/canvas/text_metrics.h
+===================================================================
+--- src.orig/third_party/blink/renderer/core/html/canvas/text_metrics.h
++++ src/third_party/blink/renderer/core/html/canvas/text_metrics.h
 @@ -110,6 +110,8 @@ class CORE_EXPORT TextMetrics final : pu
      float x_position_;
    };
@@ -262,8 +290,10 @@
   private:
    void Update(const Font*,
                const TextDirection& direction,
---- a/third_party/blink/renderer/modules/canvas/canvas2d/base_rendering_context_2d.cc
-+++ b/third_party/blink/renderer/modules/canvas/canvas2d/base_rendering_context_2d.cc
+Index: src/third_party/blink/renderer/modules/canvas/canvas2d/base_rendering_context_2d.cc
+===================================================================
+--- src.orig/third_party/blink/renderer/modules/canvas/canvas2d/base_rendering_context_2d.cc
++++ src/third_party/blink/renderer/modules/canvas/canvas2d/base_rendering_context_2d.cc
 @@ -107,6 +107,9 @@
  // https://github.com/include-what-you-use/include-what-you-use/issues/1122
  // IWYU pragma: no_include "base/numerics/clamped_math.h"
@@ -298,8 +328,10 @@
  }
  
  String BaseRenderingContext2D::lang() const {
---- a/third_party/blink/renderer/platform/BUILD.gn
-+++ b/third_party/blink/renderer/platform/BUILD.gn
+Index: src/third_party/blink/renderer/platform/BUILD.gn
+===================================================================
+--- src.orig/third_party/blink/renderer/platform/BUILD.gn
++++ src/third_party/blink/renderer/platform/BUILD.gn
 @@ -1824,6 +1824,7 @@ component("platform") {
      "//components/paint_preview/common",
      "//components/search_engines:search_engine_utils",
@@ -308,8 +340,10 @@
      "//components/viz/client",
      "//components/viz/common",
      "//components/webrtc:net_address_utils",
---- a/third_party/blink/renderer/platform/exported/web_runtime_features.cc
-+++ b/third_party/blink/renderer/platform/exported/web_runtime_features.cc
+Index: src/third_party/blink/renderer/platform/exported/web_runtime_features.cc
+===================================================================
+--- src.orig/third_party/blink/renderer/platform/exported/web_runtime_features.cc
++++ src/third_party/blink/renderer/platform/exported/web_runtime_features.cc
 @@ -72,4 +72,12 @@ void WebRuntimeFeatures::EnableLocalNetw
    RuntimeEnabledFeatures::SetLocalNetworkAccessWebRTCEnabled(enable);
  }
@@ -323,8 +357,10 @@
 +}
 +
  }  // namespace blink
---- a/third_party/blink/renderer/platform/graphics/image_data_buffer.cc
-+++ b/third_party/blink/renderer/platform/graphics/image_data_buffer.cc
+Index: src/third_party/blink/renderer/platform/graphics/image_data_buffer.cc
+===================================================================
+--- src.orig/third_party/blink/renderer/platform/graphics/image_data_buffer.cc
++++ src/third_party/blink/renderer/platform/graphics/image_data_buffer.cc
 @@ -35,6 +35,7 @@
  #include "base/compiler_specific.h"
  #include "base/memory/ptr_util.h"
@@ -333,8 +369,10 @@
  #include "third_party/blink/renderer/platform/wtf/text/base64.h"
  #include "third_party/blink/renderer/platform/wtf/text/strcat.h"
  #include "third_party/skia/include/core/SkImage.h"
---- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
-+++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
+Index: src/third_party/blink/renderer/platform/runtime_enabled_features.json5
+===================================================================
+--- src.orig/third_party/blink/renderer/platform/runtime_enabled_features.json5
++++ src/third_party/blink/renderer/platform/runtime_enabled_features.json5
 @@ -3080,6 +3080,12 @@
        status: "stable",
      },

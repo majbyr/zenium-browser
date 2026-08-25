@@ -1,0 +1,220 @@
+Index: src/components/zenium_services/pref_names.h
+===================================================================
+--- src.orig/components/zenium_services/pref_names.h
++++ src/components/zenium_services/pref_names.h
+@@ -33,6 +33,9 @@ inline constexpr char kZeniumExtProxyEna
+ inline constexpr char kZeniumBangsEnabled[] =
+     "zenium.services.bangs";
+ 
++inline constexpr char kZeniumUpdateFetchingEnabled[] =
++    "zenium.services.browser_updates";
++
+ inline constexpr char kZeniumSpellcheckEnabled[] =
+     "zenium.services.spellcheck_files";
+ 
+Index: src/components/zenium_services/zenium_services_helpers.h
+===================================================================
+--- src.orig/components/zenium_services/zenium_services_helpers.h
++++ src/components/zenium_services/zenium_services_helpers.h
+@@ -22,11 +22,13 @@ bool ShouldAccessServices(const PrefServ
+ 
+ COMPONENT_EXPORT(ZENIUM) bool ShouldFetchBangs(const PrefService& prefs);
+ COMPONENT_EXPORT(ZENIUM) bool ShouldAccessExtensionService(const PrefService& prefs);
++COMPONENT_EXPORT(ZENIUM) bool ShouldAccessUpdateService(const PrefService& prefs);
+ COMPONENT_EXPORT(ZENIUM) GURL GetServicesBaseURL(const PrefService& prefs);
+ COMPONENT_EXPORT(ZENIUM) GURL GetDummyURL();
+ COMPONENT_EXPORT(ZENIUM) GURL GetExtensionUpdateURL(const PrefService& prefs);
+ COMPONENT_EXPORT(ZENIUM) GURL GetWebstoreSnippetURL(const PrefService& prefs, std::string_view id);
+ COMPONENT_EXPORT(ZENIUM) GURL GetSpellcheckURL(const PrefService& prefs);
++COMPONENT_EXPORT(ZENIUM) GURL GetBrowserUpdateURL(const PrefService& prefs);
+ COMPONENT_EXPORT(ZENIUM) std::optional<GURL> GetValidUserOverridenURL(std::string_view user_url_);
+ COMPONENT_EXPORT(ZENIUM) void ConfigurePrefChangeRegistrarFor(std::string_view pref_name,
+                             PrefChangeRegistrar& registrar, const base::RepeatingClosure& observer);
+Index: src/components/zenium_services/zenium_services_helpers.cc
+===================================================================
+--- src.orig/components/zenium_services/zenium_services_helpers.cc
++++ src/components/zenium_services/zenium_services_helpers.cc
+@@ -6,6 +6,7 @@
+ 
+ #include <optional>
+ 
++#include "base/command_line.h"
+ #include "base/functional/bind.h"
+ #include "base/strings/stringprintf.h"
+ #include "components/zenium_services/pref_names.h"
+@@ -15,6 +16,28 @@
+ #include "url/url_constants.h"
+ 
+ namespace zenium {
++#if defined(ARCH_CPU_ARM64)
++#define CPU_ARCH_STR "arm64"
++#elif defined(ARCH_CPU_X86_64)
++#define CPU_ARCH_STR "x86_64"
++#endif
++
++#if defined(CPU_ARCH_STR) && (BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN))
++#define UPDATES_SUPPORTED
++#endif
++
++#if defined(UPDATES_SUPPORTED)
++constexpr std::string_view kUpdateBaseUrl = "https://updates.zenium.computer/";
++constexpr const char kUpdatePath[] =
++#if BUILDFLAG(IS_MAC)
++    "mac/appcast-" CPU_ARCH_STR ".xml";
++#elif BUILDFLAG(IS_WIN)
++    "win/appcast.xml";
++#endif
++
++// Duplicated from zenium_flag_choices.h to avoid importing it.
++constexpr const char kUpdateServerUrlCommandLine[] = "custom-update-server-url";
++#endif
+ 
+ std::optional<GURL> GetValidUserOverridenURL(std::string_view user_url_) {
+     if (user_url_.empty()) {
+@@ -73,6 +96,11 @@ bool ShouldFetchBangs(const PrefService&
+             prefs.GetBoolean(prefs::kZeniumBangsEnabled);
+ }
+ 
++bool ShouldAccessUpdateService(const PrefService& prefs) {
++  return ShouldAccessServices(prefs) &&
++         prefs.GetBoolean(prefs::kZeniumUpdateFetchingEnabled);
++}
++
+ GURL GetExtensionUpdateURL(const PrefService& prefs) {
+     if (!ShouldAccessExtensionService(prefs)) {
+         return GetDummyURL();
+@@ -98,6 +126,24 @@ GURL GetSpellcheckURL(const PrefService&
+     return GetServicesBaseURL(prefs).Resolve("/dict/");
+ }
+ 
++GURL GetBrowserUpdateURL(const PrefService& prefs) {
++  if (!ShouldAccessUpdateService(prefs)) {
++    return GetDummyURL();
++  }
++
++#if defined(UPDATES_SUPPORTED)
++  const auto* command_line = base::CommandLine::ForCurrentProcess();
++  std::string baseUrl(kUpdateBaseUrl);
++  if (command_line->HasSwitch(zenium::kUpdateServerUrlCommandLine)) {
++    baseUrl =
++        command_line->GetSwitchValueASCII(zenium::kUpdateServerUrlCommandLine);
++  }
++  return GURL(baseUrl).Resolve(kUpdatePath);
++#else
++  return GetDummyURL();
++#endif
++}
++
+ void ConfigurePrefChangeRegistrarFor(std::string_view pref_name,
+     PrefChangeRegistrar& registrar, const base::RepeatingClosure& observer) {
+   registrar.Add(prefs::kZeniumServicesEnabled, observer);
+Index: src/chrome/browser/resources/settings/privacy_page/services_page.html
+===================================================================
+--- src.orig/chrome/browser/resources/settings/privacy_page/services_page.html
++++ src/chrome/browser/resources/settings/privacy_page/services_page.html
+@@ -99,6 +99,11 @@
+                     sub-label="$i18n{zeniumSpellcheckToggleDescription}">
+                 </settings-toggle-button>
+             </if>
++            <settings-toggle-button id="updatesToggleButton"
++                pref="{{prefs.zenium.services.browser_updates}}"
++                label="$i18n{zeniumUpdatesToggle}"
++                sub-label="$i18n{zeniumUpdatesToggleDescription}">
++            </settings-toggle-button>
+         </cr-collapse>
+     </div>
+     </template>
+Index: src/chrome/browser/ui/webui/settings/settings_localized_strings_provider.cc
+===================================================================
+--- src.orig/chrome/browser/ui/webui/settings/settings_localized_strings_provider.cc
++++ src/chrome/browser/ui/webui/settings/settings_localized_strings_provider.cc
+@@ -2395,6 +2395,9 @@ void AddPrivacyStrings(content::WebUIDat
+       {"zeniumSpellcheckToggle", IDS_SETTINGS_ZENIUM_SERVICES_SPELLCHECK_TOGGLE},
+       {"zeniumSpellcheckToggleDescription",
+         IDS_SETTINGS_ZENIUM_SERVICES_SPELLCHECK_TOGGLE_DESCRIPTION},
++      {"zeniumUpdatesToggle", IDS_SETTINGS_ZENIUM_SERVICES_UPDATE},
++      {"zeniumUpdatesToggleDescription",
++        IDS_SETTINGS_ZENIUM_SERVICES_UPDATE_DESCRIPTION},
+       {"zeniumOriginOverride", IDS_SETTINGS_ZENIUM_SERVICES_OVERRIDE},
+       {"zeniumOriginOverrideDescription",
+         IDS_SETTINGS_ZENIUM_SERVICES_OVERRIDE_DESCRIPTION},
+Index: src/chrome/browser/extensions/api/settings_private/prefs_util.cc
+===================================================================
+--- src.orig/chrome/browser/extensions/api/settings_private/prefs_util.cc
++++ src/chrome/browser/extensions/api/settings_private/prefs_util.cc
+@@ -430,6 +430,8 @@ const PrefsUtil::TypedPrefMap& PrefsUtil
+       settings_api::PrefType::kBoolean;
+   (*s_allowlist)[::prefs::kZeniumSpellcheckEnabled] =
+       settings_api::PrefType::kBoolean;
++  (*s_allowlist)[::prefs::kZeniumUpdateFetchingEnabled] =
++      settings_api::PrefType::kBoolean;
+   (*s_allowlist)[::prefs::kZeniumServicesOrigin] =
+       settings_api::PrefType::kString;
+   (*s_allowlist)[::prefs::kZeniumServicesConsented] =
+Index: src/chrome/browser/ui/browser_ui_prefs.cc
+===================================================================
+--- src.orig/chrome/browser/ui/browser_ui_prefs.cc
++++ src/chrome/browser/ui/browser_ui_prefs.cc
+@@ -232,6 +232,7 @@ void RegisterBrowserUserPrefs(user_prefs
+     registry->RegisterStringPref(prefs::kZeniumServicesOrigin, "");
+     registry->RegisterBooleanPref(prefs::kZeniumDidOnboarding, false);
+     registry->RegisterBooleanPref(prefs::kZeniumServicesConsented, false);
++    registry->RegisterBooleanPref(prefs::kZeniumUpdateFetchingEnabled, true);
+   }
+ 
+   registry->RegisterBooleanPref(
+Index: src/chrome/app/settings_strings.grdp
+===================================================================
+--- src.orig/chrome/app/settings_strings.grdp
++++ src/chrome/app/settings_strings.grdp
+@@ -1760,6 +1760,22 @@
+     <message name="IDS_SETTINGS_ZENIUM_SERVICES_SPELLCHECK_TOGGLE_DESCRIPTION" desc="Description of the for enabling/disabling of downloading spellcheck files">
+       Zenium will fetch dictionary files used for spell checking when requested. When disabled, spell checking will not work.
+     </message>
++    <if expr="not is_linux">
++      <message name="IDS_SETTINGS_ZENIUM_SERVICES_UPDATE" desc="Toggle for automatic update downloads">
++        Allow automatic browser updates
++      </message>
++      <message name="IDS_SETTINGS_ZENIUM_SERVICES_UPDATE_DESCRIPTION" desc="Description of the toggle for automatic update downloads">
++        Zenium will automatically check for updates and install them. This includes browser and component updates. We recommend keeping this setting enabled to ensure you get the latest features and security updates.
++      </message>
++    </if>
++    <if expr="is_linux">
++      <message name="IDS_SETTINGS_ZENIUM_SERVICES_UPDATE" desc="Toggle for automatic update downloads">
++        Allow automatic component updates
++      </message>
++      <message name="IDS_SETTINGS_ZENIUM_SERVICES_UPDATE_DESCRIPTION" desc="Description of the toggle for automatic update downloads">
++        Zenium will automatically check for component updates and install them. We recommend keeping this setting enabled. On Linux, browser updates are handled by your distro's package manager. Please check for Zenium package updates at least every week.
++      </message>
++    </if>
+     <message name="IDS_SETTINGS_ZENIUM_SERVICES_OVERRIDE" desc="Text input for overriding the Zenium services server">
+       Use your own instance of Zenium services
+     </message>
+Index: src/chrome/browser/zenium_flag_choices.h
+===================================================================
+--- src.orig/chrome/browser/zenium_flag_choices.h
++++ src/chrome/browser/zenium_flag_choices.h
+@@ -27,6 +27,8 @@ constexpr const FeatureEntry::Choice kCh
+     {kChannelBeta, kChannelCommandLine, kChannelBeta},
+ };
+ 
++constexpr const char kUpdateServerUrlCommandLine[] = "custom-update-server-url";
++
+ }  // namespace zenium
+ 
+ #endif /* CHROME_BROWSER_ZENIUM_FLAG_CHOICES_H_ */
+Index: src/chrome/browser/zenium_flag_entries.h
+===================================================================
+--- src.orig/chrome/browser/zenium_flag_entries.h
++++ src/chrome/browser/zenium_flag_entries.h
+@@ -19,6 +19,10 @@
+     {zenium::kChannelCommandLine, "Update channel",
+      "Selects which update channel to use for update checking. Zenium flag.",
+      kOsAll, MULTI_VALUE_TYPE(zenium::kChannelChoices)},
++    {zenium::kUpdateServerUrlCommandLine, "Update server URL",
++     "Overrides the default URL for fetching updates. Should be used only for "
++     "testing. Zenium flag.",
++     kOsDesktop, STRING_VALUE_TYPE(zenium::kUpdateServerUrlCommandLine, "")},
+     // core/network
+     // ui
+     // platform

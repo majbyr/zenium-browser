@@ -1,6 +1,8 @@
 # Disables translation and removes the "Translate to" context menu when --translate-script-url flag is not set
---- a/chrome/browser/renderer_context_menu/render_view_context_menu.cc
-+++ b/chrome/browser/renderer_context_menu/render_view_context_menu.cc
+Index: src/chrome/browser/renderer_context_menu/render_view_context_menu.cc
+===================================================================
+--- src.orig/chrome/browser/renderer_context_menu/render_view_context_menu.cc
++++ src/chrome/browser/renderer_context_menu/render_view_context_menu.cc
 @@ -210,6 +210,7 @@
  #include "components/strings/grit/components_strings.h"
  #include "components/supervised_user/core/browser/supervised_user_preferences.h"
@@ -17,8 +19,10 @@
      AppendTranslateItem();
    }
  }
---- a/components/translate/core/browser/translate_language_list.cc
-+++ b/components/translate/core/browser/translate_language_list.cc
+Index: src/components/translate/core/browser/translate_language_list.cc
+===================================================================
+--- src.orig/components/translate/core/browser/translate_language_list.cc
++++ src/components/translate/core/browser/translate_language_list.cc
 @@ -12,6 +12,7 @@
  #include <string_view>
  
@@ -45,8 +49,10 @@
    // If resource requests are not allowed, we'll get a callback when they are.
    if (!resource_requests_allowed_) {
      request_pending_ = true;
---- a/components/translate/core/browser/translate_manager.cc
-+++ b/components/translate/core/browser/translate_manager.cc
+Index: src/components/translate/core/browser/translate_manager.cc
+===================================================================
+--- src.orig/components/translate/core/browser/translate_manager.cc
++++ src/components/translate/core/browser/translate_manager.cc
 @@ -865,8 +865,9 @@ void TranslateManager::FilterIsTranslate
          TriggerDecision::kDisabledOffline);
    }
@@ -59,8 +65,10 @@
      // Without an API key, translate won't work, so don't offer to translate in
      // the first place. Leave kOfferTranslateEnabled on, though, because that
      // settings syncs and we don't want to turn off translate everywhere else.
---- a/components/translate/core/browser/translate_ranker_impl.cc
-+++ b/components/translate/core/browser/translate_ranker_impl.cc
+Index: src/components/translate/core/browser/translate_ranker_impl.cc
+===================================================================
+--- src.orig/components/translate/core/browser/translate_ranker_impl.cc
++++ src/components/translate/core/browser/translate_ranker_impl.cc
 @@ -149,9 +149,8 @@ TranslateRankerImpl::TranslateRankerImpl
                                           ukm::UkmRecorder* ukm_recorder)
      : ukm_recorder_(ukm_recorder),
@@ -82,8 +90,10 @@
    translate_event->set_ranker_request_timestamp_sec(
        (base::TimeTicks::Now() - base::TimeTicks()).InSeconds());
    translate_event->set_ranker_version(GetModelVersion());
---- a/components/translate/core/browser/translate_script.cc
-+++ b/components/translate/core/browser/translate_script.cc
+Index: src/components/translate/core/browser/translate_script.cc
+===================================================================
+--- src.orig/components/translate/core/browser/translate_script.cc
++++ src/components/translate/core/browser/translate_script.cc
 @@ -216,8 +216,13 @@ void TranslateScript::OnScriptFetchCompl
                          server_params.c_str());
  

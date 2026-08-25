@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2025 The Helium Authors
+# Copyright 2025 The Zenium Authors
 # You can use, redistribute, and/or modify this source code under
 # the terms of the GPL-3.0 license that can be found in the LICENSE file.
 
@@ -77,7 +77,7 @@ PRUNING_EXCLUDE_PATTERNS = [
     'third_party/ublock/lib/lz4/lz4-block-codec.wasm',
     'third_party/ublock/lib/publicsuffixlist/wasm/publicsuffixlist.wasm',
     'third_party/ublock/web_accessible_resources/noop-1s.mp4',
-    # Exclusions for Helium onboarding
+    # Exclusions for Zenium onboarding
     'components/helium_onboarding/node_modules/@esbuild/*/bin/esbuild',
     'components/helium_onboarding/node_modules/@esbuild/*/esbuild.exe',
     'components/helium_onboarding/node_modules/@rollup/*/rollup.*.node',
@@ -140,7 +140,7 @@ DOMAIN_EXCLUDE_PREFIXES = [
     'chrome/common/extensions/api/_api_features.json',
     'extensions/common/extension_urls.cc',
     'extensions/browser/updater/safe_manifest_parser.cc',
-    # Helium components
+    # Zenium components
     'third_party/ublock/',
     'components/helium_onboarding/',
 ]

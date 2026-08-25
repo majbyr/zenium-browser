@@ -1,7 +1,9 @@
 # Disables IPv6 probing and adds an option to change the IPv6 probing result
 
---- a/chrome/browser/ungoogled_flag_entries.h
-+++ b/chrome/browser/ungoogled_flag_entries.h
+Index: src/chrome/browser/ungoogled_flag_entries.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_entries.h
++++ src/chrome/browser/ungoogled_flag_entries.h
 @@ -4,4 +4,8 @@
  
  #ifndef CHROME_BROWSER_UNGOOGLED_FLAG_ENTRIES_H_
@@ -11,8 +13,10 @@
 +     "Forces the result of the browser's IPv6 probing (i.e. IPv6 connectivity test) to be unsuccessful. This causes IPv4 addresses to be prioritized over IPv6 addresses. Without this flag, the probing result is set to be successful, which causes IPv6 to be used over IPv4 when possible. ungoogled-chromium flag.",
 +     kOsAll, FEATURE_VALUE_TYPE(net::features::kSetIpv6ProbeFalse)},
  #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_ENTRIES_H_
---- a/net/base/features.cc
-+++ b/net/base/features.cc
+Index: src/net/base/features.cc
+===================================================================
+--- src.orig/net/base/features.cc
++++ src/net/base/features.cc
 @@ -29,6 +29,8 @@
  
  namespace net::features {
@@ -22,8 +26,10 @@
  BASE_FEATURE(kAlpsForHttp2, base::FEATURE_ENABLED_BY_DEFAULT);
  
  BASE_FEATURE(kAsyncRetryOnTooManyConnectionErrors,
---- a/net/base/features.h
-+++ b/net/base/features.h
+Index: src/net/base/features.h
+===================================================================
+--- src.orig/net/base/features.h
++++ src/net/base/features.h
 @@ -22,6 +22,8 @@
  
  namespace net::features {
@@ -33,8 +39,10 @@
  // Enables ALPS extension of TLS 1.3 for HTTP/2, see
  // https://vasilvv.github.io/tls-alps/draft-vvv-tls-alps.html and
  // https://vasilvv.github.io/httpbis-alps/draft-vvv-httpbis-alps.html.
---- a/net/dns/host_resolver_manager.cc
-+++ b/net/dns/host_resolver_manager.cc
+Index: src/net/dns/host_resolver_manager.cc
+===================================================================
+--- src.orig/net/dns/host_resolver_manager.cc
++++ src/net/dns/host_resolver_manager.cc
 @@ -153,11 +153,6 @@ const size_t kMaxHostLength = 4096;
  // cached.
  const int kIPv6ProbePeriodMs = 1000;

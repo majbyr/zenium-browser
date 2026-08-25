@@ -1,0 +1,253 @@
+--- a/chrome/browser/ui/views/frame/browser_view.cc
++++ b/chrome/browser/ui/views/frame/browser_view.cc
+@@ -1755,6 +1755,22 @@
+     }
+   }
+ 
++  // In the vertical layout, the navigation controls and omnibox belong to the
++  // sidebar rather than occupying a second strip across the browser window.
++  // Keeping the actual ToolbarView (instead of duplicating controls) also
++  // preserves command handling, focus traversal, extensions, and menus.
++  const bool toolbar_in_vertical_sidebar =
++      controller && controller->IsVerticalLayout() && GetIsNormalType();
++  views::View* const toolbar_parent =
++      toolbar_in_vertical_sidebar
++          ? static_cast<views::View*>(vertical_tab_strip_region_view_)
++          : static_cast<views::View*>(top_container_);
++  if (toolbar_ && toolbar_parent && toolbar_->parent() != toolbar_parent) {
++    std::unique_ptr<views::View> owned_toolbar =
++        toolbar_->parent()->RemoveChildViewT(toolbar_);
++    toolbar_parent->AddChildViewAt(std::move(owned_toolbar), 0);
++  }
++
+   if (toolbar_) {
+     toolbar_->UpdateToolbarLayout();
+   }
+--- a/chrome/browser/ui/views/frame/layout/browser_view_tabbed_layout_impl.cc
++++ b/chrome/browser/ui/views/frame/layout/browser_view_tabbed_layout_impl.cc
+@@ -424,7 +424,10 @@
+   layout.min_content_width = kContentsContainerMinimumWidth;
+ 
+   // Get information about the vertical tabstrip, if present.
+-  const int toolbar_minimum_width = views().toolbar->GetMinimumSize().width();
++  const int toolbar_minimum_width =
++      IsParentedTo(views().toolbar, views().top_container)
++          ? views().toolbar->GetMinimumSize().width()
++          : 0;
+   int min_vertical_tab_strip_width = 0;
+   int preferred_vertical_tab_strip_width = 0;
+   if (layout_data_->tab_strip_type == TabStripType::kVertical) {
+@@ -632,7 +635,11 @@
+ 
+ gfx::Size BrowserViewTabbedLayoutImpl::GetMinimumMainAreaSize(
+     const BrowserLayoutParams& params) const {
+-  gfx::Size toolbar_size = views().toolbar->GetMinimumSize();
++  // A toolbar nested in the vertical tab region consumes sidebar space, not
++  // top-chrome space in the main content column.
++  gfx::Size toolbar_size = IsParentedTo(views().toolbar, views().top_container)
++                               ? views().toolbar->GetMinimumSize()
++                               : gfx::Size();
+   const auto tab_strip_type = GetTabStripType();
+   if (tab_strip_type == TabStripType::kVertical) {
+     toolbar_size.Enlarge(GetExclusionWidth(params), 0);
+@@ -732,7 +739,8 @@
+ 
+   const auto& params = layout_data_->revised_params;
+ 
+-  if (delegate().IsToolbarVisible()) {
++  if (delegate().IsToolbarVisible() &&
++      IsParentedTo(views().toolbar, views().top_container)) {
+     return GetBoundsWithExclusion(params, views().toolbar).height();
+   }
+ 
+--- a/chrome/browser/ui/views/toolbar/toolbar_view.cc
++++ b/chrome/browser/ui/views/toolbar/toolbar_view.cc
+@@ -5,6 +5,7 @@
+ #include "chrome/browser/ui/views/toolbar/toolbar_view.h"
+ 
+ #include <algorithm>
++#include <limits>
+ #include <memory>
+ #include <utility>
+ 
+@@ -188,6 +189,11 @@
+ constexpr int kLocationBarFlexOrder = kToolbarFlexOrderOffset + 1;
+ constexpr int kToolbarActionsFlexOrder = kToolbarFlexOrderOffset + 2;
+ constexpr int kExtensionsFlexOrder = kToolbarFlexOrderOffset + 3;
++constexpr int kVerticalSidebarLocationBarFlexOrder =
++    kToolbarFlexOrderOffset + 4;
++constexpr int kVerticalSidebarHorizontalPadding = 6;
++constexpr int kVerticalSidebarRowGap = 4;
++constexpr int kVerticalSidebarMinimumLocationBarWidth = 120;
+ 
+ constexpr int kDynamicNewTabButtonIconSize = 16;
+ 
+@@ -269,10 +275,14 @@
+  public:
+   using GetCenteredBoundsCallback =
+       base::RepeatingCallback<gfx::Rect(gfx::Rect, int)>;
++  using IsVerticalSidebarCallback = base::RepeatingCallback<bool()>;
+ 
+   CenteredLocationBarLayout(views::View* location_bar,
+-                            GetCenteredBoundsCallback callback)
+-      : location_bar_(location_bar), callback_(std::move(callback)) {}
++                            GetCenteredBoundsCallback callback,
++                            IsVerticalSidebarCallback vertical_sidebar_callback)
++      : location_bar_(location_bar),
++        callback_(std::move(callback)),
++        vertical_sidebar_callback_(std::move(vertical_sidebar_callback)) {}
+ 
+   CenteredLocationBarLayout(const CenteredLocationBarLayout&) = delete;
+   CenteredLocationBarLayout& operator=(const CenteredLocationBarLayout&) =
+@@ -287,7 +297,53 @@
+         views::FlexLayout::CalculateProposedLayout(size_bounds);
+     views::ChildLayout* const location_bar_layout =
+         layout.GetLayoutFor(location_bar_);
+-    if (location_bar_layout && location_bar_layout->visible) {
++    if (location_bar_layout && vertical_sidebar_callback_.Run()) {
++      const int toolbar_width =
++          size_bounds.width().value_or(layout.host_size.width());
++      int controls_top = std::numeric_limits<int>::max();
++      int controls_bottom = 0;
++      for (const auto& child_layout : layout.child_layouts) {
++        if (child_layout.child_view != location_bar_ && child_layout.visible) {
++          controls_top = std::min(controls_top, child_layout.bounds.y());
++          controls_bottom =
++              std::max(controls_bottom, child_layout.bounds.bottom());
++        }
++      }
++      if (controls_top != std::numeric_limits<int>::max()) {
++        const int controls_offset =
++            kVerticalSidebarHorizontalPadding - controls_top;
++        for (auto& child_layout : layout.child_layouts) {
++          if (child_layout.child_view != location_bar_ &&
++              child_layout.visible) {
++            child_layout.bounds.Offset(0, controls_offset);
++          }
++        }
++        controls_bottom += controls_offset;
++      } else {
++        controls_bottom = kVerticalSidebarHorizontalPadding;
++      }
++
++      const int location_bar_width =
++          std::max(0, toolbar_width - 2 * kVerticalSidebarHorizontalPadding);
++      const int location_bar_height =
++          location_bar_->GetPreferredSize().height();
++      // LayoutManagerBase applies this value to the view itself. Base the
++      // visibility on the available width so expanding the sidebar restores
++      // the address row after it was hidden in the collapsed state.
++      location_bar_layout->visible =
++          location_bar_width >= kVerticalSidebarMinimumLocationBarWidth;
++      location_bar_layout->bounds =
++          gfx::Rect(kVerticalSidebarHorizontalPadding,
++                    controls_bottom + kVerticalSidebarRowGap,
++                    location_bar_width, location_bar_height);
++
++      layout.host_size.set_width(toolbar_width);
++      layout.host_size.set_height(location_bar_layout->visible
++                                      ? location_bar_layout->bounds.bottom() +
++                                            kVerticalSidebarHorizontalPadding
++                                      : controls_bottom +
++                                            kVerticalSidebarHorizontalPadding);
++    } else if (location_bar_layout && location_bar_layout->visible) {
+       location_bar_layout->bounds =
+           callback_.Run(location_bar_layout->bounds, layout.host_size.width());
+     }
+@@ -297,6 +353,7 @@
+  private:
+   const raw_ptr<views::View> location_bar_;
+   GetCenteredBoundsCallback callback_;
++  IsVerticalSidebarCallback vertical_sidebar_callback_;
+ };
+ 
+ }  // namespace
+@@ -1581,13 +1638,19 @@
+       // back button) plus margins.
+       // TODO(crbug.com/40663413): Figure out why the height reports incorrectly
+       // on some installations.
+-      if (layout_manager_ && location_bar_->IsVisible()) {
++      if (layout_manager_ && location_bar_->IsVisible() &&
++          !IsVerticalLayout()) {
+         const int max_height = std::max(location_bar_->PreferredSize().height(),
+                                         GetBackForwardButtonSize().height()) +
+                                layout_manager_->interior_margin().height();
+         size.SetToMin({size.width(), max_height});
+       }
+   }
++  if (display_mode_ == DisplayMode::kNormal && IsVerticalLayout()) {
++    // Let the tab list determine the sidebar width. The toolbar adapts to that
++    // width rather than making the sidebar as wide as all controls combined.
++    size.set_width(0);
++  }
+   size.set_height(size.height() * size_animation_.GetCurrentValue());
+   return size;
+ }
+@@ -1609,7 +1672,8 @@
+       // back button) plus margins.
+       // TODO(crbug.com/40663413): Figure out why the height reports incorrectly
+       // on some installations.
+-      if (layout_manager_ && location_bar_->IsVisible()) {
++      if (layout_manager_ && location_bar_->IsVisible() &&
++          !IsVerticalLayout()) {
+         const int max_height =
+             std::max(location_bar_->MinimumSize().height(),
+                      GetBackForwardButtonSize(/*minimum_size=*/true).height()) +
+@@ -1624,6 +1688,9 @@
+             default_margin + overflow_button_->GetMinimumSize().width(), 0);
+       }
+   }
++  if (display_mode_ == DisplayMode::kNormal && IsVerticalLayout()) {
++    size.set_width(0);
++  }
+   size.set_height(size.height() * size_animation_.GetCurrentValue());
+   return size;
+ }
+@@ -1737,6 +1804,8 @@
+       SetLayoutManager(std::make_unique<CenteredLocationBarLayout>(
+           location_bar_view_,
+           base::BindRepeating(&ToolbarView::GetCenteredLocationBarBounds,
++                              base::Unretained(this)),
++          base::BindRepeating(&ToolbarView::IsVerticalLayout,
+                               base::Unretained(this))));
+ 
+   layout_manager_->SetOrientation(views::LayoutOrientation::kHorizontal)
+@@ -1915,14 +1984,17 @@
+                                views::MaximumFlexSizeRule::kPreferred);
+   const int location_bar_margin =
+       GetLayoutConstant(LayoutConstant::kLocationBarMargin);
++  const bool is_vertical_layout = IsVerticalLayout();
+   const auto min_location_bar_flex =
+-      features::ZeniumUseCompactLocationWidth()
+-          ? views::MinimumFlexSizeRule::kScaleToMinimum
+-          : views::MinimumFlexSizeRule::kPreferred;
++      is_vertical_layout ? views::MinimumFlexSizeRule::kScaleToZero
++                         : (features::ZeniumUseCompactLocationWidth()
++                                ? views::MinimumFlexSizeRule::kScaleToMinimum
++                                : views::MinimumFlexSizeRule::kPreferred);
+   const views::FlexSpecification location_bar_flex_rule =
+       views::FlexSpecification(min_location_bar_flex,
+                                views::MaximumFlexSizeRule::kUnbounded)
+-          .WithOrder(kLocationBarFlexOrder);
++          .WithOrder(is_vertical_layout ? kVerticalSidebarLocationBarFlexOrder
++                                        : kLocationBarFlexOrder);
+ 
+   const bool is_compact_layout = IsCompactLayout();
+   const auto make_flex_rule = [&](auto* layout_manager, int order) {
+@@ -1948,8 +2020,14 @@
+   if (location_bar_view_) {
+     location_bar_view_->SetProperty(views::kFlexBehaviorKey,
+                                     location_bar_flex_rule);
+-    if (is_compact_layout) {
+-      location_bar_view_->SetPreferredSize(gfx::Size(kPreferredCompactWidth, 0));
++    if (is_vertical_layout) {
++      const int preferred_height =
++          location_bar_view_->GetPreferredSize().height();
++      location_bar_view_->SetPreferredSize(gfx::Size(0, preferred_height));
++      location_bar_view_->SetProperty(views::kMarginsKey, gfx::Insets());
++    } else if (is_compact_layout) {
++      location_bar_view_->SetPreferredSize(
++          gfx::Size(kPreferredCompactWidth, 0));
+       location_bar_view_->SetProperty(
+           views::kMarginsKey, gfx::Insets::TLBR(0, location_bar_margin, 0, 0));
+     } else {

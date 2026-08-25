@@ -1,5 +1,7 @@
---- a/chrome/browser/extensions/api/developer_private/extension_info_generator.cc
-+++ b/chrome/browser/extensions/api/developer_private/extension_info_generator.cc
+Index: src/chrome/browser/extensions/api/developer_private/extension_info_generator.cc
+===================================================================
+--- src.orig/chrome/browser/extensions/api/developer_private/extension_info_generator.cc
++++ src/chrome/browser/extensions/api/developer_private/extension_info_generator.cc
 @@ -871,16 +871,6 @@ void ExtensionInfoGenerator::FillExtensi
          toolbar_actions_model->IsActionPinned(extension.id());
    }
@@ -17,8 +19,10 @@
  
    info.can_upload_as_account_extension =
        AccountExtensionTracker::Get(profile)->CanUploadAsAccountExtension(
---- a/chrome/browser/ui/webui/extensions/extensions_ui.cc
-+++ b/chrome/browser/ui/webui/extensions/extensions_ui.cc
+Index: src/chrome/browser/ui/webui/extensions/extensions_ui.cc
+===================================================================
+--- src.orig/chrome/browser/ui/webui/extensions/extensions_ui.cc
++++ src/chrome/browser/ui/webui/extensions/extensions_ui.cc
 @@ -486,7 +486,7 @@ content::WebUIDataSource* CreateAndAddEx
            extensions_features::kExtensionsMenuAccessControlWithPermittedSites));
    source->AddBoolean(
@@ -28,8 +32,10 @@
    source->AddBoolean("enableGlobalScopedShortcuts", IsGlobalShortcutEnabled());
  
    // MV2 deprecation.
---- a/extensions/browser/manifest_v2_handler.cc
-+++ b/extensions/browser/manifest_v2_handler.cc
+Index: src/extensions/browser/manifest_v2_handler.cc
+===================================================================
+--- src.orig/extensions/browser/manifest_v2_handler.cc
++++ src/extensions/browser/manifest_v2_handler.cc
 @@ -108,12 +108,7 @@ bool ManifestV2HandlerFactory::ServiceIs
  
  // Returns true if legacy extensions should be disabled.
@@ -43,8 +49,10 @@
  }
  
  }  // namespace
---- a/extensions/common/extension.cc
-+++ b/extensions/common/extension.cc
+Index: src/extensions/common/extension.cc
+===================================================================
+--- src.orig/extensions/common/extension.cc
++++ src/extensions/common/extension.cc
 @@ -100,12 +100,6 @@ bool IsManifestSupported(int manifest_ve
    // Supported versions are always safe.
    if (manifest_version >= kMinimumSupportedManifestVersion &&

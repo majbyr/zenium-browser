@@ -1,5 +1,7 @@
---- a/chrome/browser/about_flags.cc
-+++ b/chrome/browser/about_flags.cc
+Index: src/chrome/browser/about_flags.cc
+===================================================================
+--- src.orig/chrome/browser/about_flags.cc
++++ src/chrome/browser/about_flags.cc
 @@ -4755,10 +4755,12 @@ const FeatureEntry::FeatureVariation kTo
  #include "chrome/browser/ungoogled_flag_choices.h"
  #include "chrome/browser/bromite_flag_choices.h"
@@ -13,8 +15,10 @@
  // Include generated flags for flag unexpiry; see //docs/flag_expiry.md and
  // //tools/flags/generate_unexpire_flags.py.
  #include "build/chromeos_buildflags.h"
+Index: src/chrome/browser/existing_switch_flag_choices.h
+===================================================================
 --- /dev/null
-+++ b/chrome/browser/existing_switch_flag_choices.h
++++ src/chrome/browser/existing_switch_flag_choices.h
 @@ -0,0 +1,21 @@
 +// Copyright (c) 2023 The ungoogled-chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
@@ -37,8 +41,10 @@
 +     "disable_non_proxied_udp"},
 +};
 +#endif  // CHROME_BROWSER_EXISTING_SWITCH_FLAG_CHOICES_H_
+Index: src/chrome/browser/existing_switch_flag_entries.h
+===================================================================
 --- /dev/null
-+++ b/chrome/browser/existing_switch_flag_entries.h
++++ src/chrome/browser/existing_switch_flag_entries.h
 @@ -0,0 +1,43 @@
 +// Copyright (c) 2023 The ungoogled-chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be

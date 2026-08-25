@@ -1,5 +1,7 @@
---- a/chrome/browser/chrome_content_browser_client.cc
-+++ b/chrome/browser/chrome_content_browser_client.cc
+Index: src/chrome/browser/chrome_content_browser_client.cc
+===================================================================
+--- src.orig/chrome/browser/chrome_content_browser_client.cc
++++ src/chrome/browser/chrome_content_browser_client.cc
 @@ -350,6 +350,7 @@
  #include "content/public/browser/internal_webui_config.h"
  #include "content/public/browser/isolated_web_apps_policy.h"
@@ -8,8 +10,10 @@
  #include "content/public/browser/navigation_handle.h"
  #include "content/public/browser/network_service_instance.h"
  #include "content/public/browser/overlay_window.h"
---- a/chrome/browser/extensions/BUILD.gn
-+++ b/chrome/browser/extensions/BUILD.gn
+Index: src/chrome/browser/extensions/BUILD.gn
+===================================================================
+--- src.orig/chrome/browser/extensions/BUILD.gn
++++ src/chrome/browser/extensions/BUILD.gn
 @@ -1049,6 +1049,7 @@ source_set("extensions") {
        "//components/resources",
        "//components/safe_browsing:buildflags",
@@ -18,8 +22,10 @@
        "//components/safe_browsing/core/common/proto:csd_proto",
        "//components/search_engines",
        "//components/services/unzip/public/cpp",
---- a/chrome/common/BUILD.gn
-+++ b/chrome/common/BUILD.gn
+Index: src/chrome/common/BUILD.gn
+===================================================================
+--- src.orig/chrome/common/BUILD.gn
++++ src/chrome/common/BUILD.gn
 @@ -532,6 +532,7 @@ static_library("url_constants") {
      "//components/optimization_guide/optimization_guide_internals/webui:url_constants",
      "//components/password_manager/content/common",
@@ -28,8 +34,10 @@
      "//device/vr/buildflags",
    ]
  
---- a/components/component_updater/installer_policies/BUILD.gn
-+++ b/components/component_updater/installer_policies/BUILD.gn
+Index: src/components/component_updater/installer_policies/BUILD.gn
+===================================================================
+--- src.orig/components/component_updater/installer_policies/BUILD.gn
++++ src/components/component_updater/installer_policies/BUILD.gn
 @@ -42,6 +42,7 @@ static_library("installer_policies_no_co
      "//components/update_client",
      "//mojo/public/cpp/base:protobuf_support",
@@ -38,8 +46,10 @@
    ]
  
    # Disallow depending on content.
---- a/components/contextual_tasks/internal/BUILD.gn
-+++ b/components/contextual_tasks/internal/BUILD.gn
+Index: src/components/contextual_tasks/internal/BUILD.gn
+===================================================================
+--- src.orig/components/contextual_tasks/internal/BUILD.gn
++++ src/components/contextual_tasks/internal/BUILD.gn
 @@ -51,6 +51,7 @@ source_set("internal") {
      "//components/sync/model",
      "//components/url_formatter",
@@ -48,8 +58,10 @@
      "//ui/gfx",
      "//url",
    ]
---- a/content/browser/BUILD.gn
-+++ b/content/browser/BUILD.gn
+Index: src/content/browser/BUILD.gn
+===================================================================
+--- src.orig/content/browser/BUILD.gn
++++ src/content/browser/BUILD.gn
 @@ -144,6 +144,7 @@ source_set("browser") {
      "//components/filename_generation",
      "//components/history/core/browser:features",

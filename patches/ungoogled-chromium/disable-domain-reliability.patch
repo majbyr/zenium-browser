@@ -2,8 +2,10 @@
 # Many of these changes are for thoroughness,
 # the most significant changes are in service_factory.cc and uploader.cc
 
---- a/chrome/browser/domain_reliability/service_factory.cc
-+++ b/chrome/browser/domain_reliability/service_factory.cc
+Index: src/chrome/browser/domain_reliability/service_factory.cc
+===================================================================
+--- src.orig/chrome/browser/domain_reliability/service_factory.cc
++++ src/chrome/browser/domain_reliability/service_factory.cc
 @@ -10,36 +10,10 @@
  
  namespace domain_reliability {
@@ -42,8 +44,10 @@
  }
  
  }  // namespace domain_reliability
---- a/chrome/browser/net/profile_network_context_service.cc
-+++ b/chrome/browser/net/profile_network_context_service.cc
+Index: src/chrome/browser/net/profile_network_context_service.cc
+===================================================================
+--- src.orig/chrome/browser/net/profile_network_context_service.cc
++++ src/chrome/browser/net/profile_network_context_service.cc
 @@ -183,8 +183,7 @@ class ChromeDomainReliabilityDelegate
    ~ChromeDomainReliabilityDelegate() override = default;
  
@@ -54,8 +58,10 @@
    }
  
    bool IsMetricsAndCrashReportingEnabled() const override {
---- a/components/domain_reliability/BUILD.gn
-+++ b/components/domain_reliability/BUILD.gn
+Index: src/components/domain_reliability/BUILD.gn
+===================================================================
+--- src.orig/components/domain_reliability/BUILD.gn
++++ src/components/domain_reliability/BUILD.gn
 @@ -7,26 +7,6 @@ action("bake_in_configs") {
    script = "bake_in_configs.py"
  
@@ -112,8 +118,10 @@
  }
  
  component("domain_reliability") {
---- a/components/domain_reliability/bake_in_configs.py
-+++ b/components/domain_reliability/bake_in_configs.py
+Index: src/components/domain_reliability/bake_in_configs.py
+===================================================================
+--- src.orig/components/domain_reliability/bake_in_configs.py
++++ src/components/domain_reliability/bake_in_configs.py
 @@ -490,7 +490,7 @@ def origin_is_whitelisted(origin):
      domain = origin[8:-1]
    else:
@@ -123,8 +131,10 @@
  
  
  def quote_and_wrap_text(text, width=79, prefix='  "', suffix='"'):
---- a/components/domain_reliability/google_configs.cc
-+++ b/components/domain_reliability/google_configs.cc
+Index: src/components/domain_reliability/google_configs.cc
+===================================================================
+--- src.orig/components/domain_reliability/google_configs.cc
++++ src/components/domain_reliability/google_configs.cc
 @@ -13,569 +13,8 @@
  
  namespace domain_reliability {
@@ -708,8 +718,10 @@
    return configs_out;
  }
  
---- a/components/domain_reliability/uploader.cc
-+++ b/components/domain_reliability/uploader.cc
+Index: src/components/domain_reliability/uploader.cc
+===================================================================
+--- src.orig/components/domain_reliability/uploader.cc
++++ src/components/domain_reliability/uploader.cc
 @@ -80,7 +80,7 @@ class DomainReliabilityUploaderImpl : pu
      if (discard_uploads_)
        discarded_upload_count_++;

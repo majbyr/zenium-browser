@@ -1,7 +1,9 @@
 # Fix building with enable_service_discovery=false and enable_mds=false
 
---- a/BUILD.gn
-+++ b/BUILD.gn
+Index: src/BUILD.gn
+===================================================================
+--- src.orig/BUILD.gn
++++ src/BUILD.gn
 @@ -589,9 +589,6 @@ group("gn_all") {
          deps += [ "//chrome/test:chrome_app_unittests" ]
        }
@@ -12,8 +14,10 @@
      }
  
      if (is_mac) {
---- a/chrome/browser/media/router/discovery/mdns/dns_sd_device_lister.cc
-+++ b/chrome/browser/media/router/discovery/mdns/dns_sd_device_lister.cc
+Index: src/chrome/browser/media/router/discovery/mdns/dns_sd_device_lister.cc
+===================================================================
+--- src.orig/chrome/browser/media/router/discovery/mdns/dns_sd_device_lister.cc
++++ src/chrome/browser/media/router/discovery/mdns/dns_sd_device_lister.cc
 @@ -40,37 +40,22 @@ DnsSdDeviceLister::DnsSdDeviceLister(
  DnsSdDeviceLister::~DnsSdDeviceLister() = default;
  
@@ -52,8 +56,10 @@
  }
  
  void DnsSdDeviceLister::OnPermissionRejected() {
---- a/chrome/browser/media/router/discovery/mdns/dns_sd_registry.cc
-+++ b/chrome/browser/media/router/discovery/mdns/dns_sd_registry.cc
+Index: src/chrome/browser/media/router/discovery/mdns/dns_sd_registry.cc
+===================================================================
+--- src.orig/chrome/browser/media/router/discovery/mdns/dns_sd_registry.cc
++++ src/chrome/browser/media/router/discovery/mdns/dns_sd_registry.cc
 @@ -97,11 +97,6 @@ DnsSdRegistry::DnsSdRegistry() {
  #endif
  }
@@ -96,8 +102,10 @@
  }
  
  void DnsSdRegistry::ServiceChanged(const std::string& service_type,
---- a/chrome/browser/media/router/discovery/mdns/dns_sd_registry.h
-+++ b/chrome/browser/media/router/discovery/mdns/dns_sd_registry.h
+Index: src/chrome/browser/media/router/discovery/mdns/dns_sd_registry.h
+===================================================================
+--- src.orig/chrome/browser/media/router/discovery/mdns/dns_sd_registry.h
++++ src/chrome/browser/media/router/discovery/mdns/dns_sd_registry.h
 @@ -16,10 +16,6 @@
  #include "base/threading/thread_checker.h"
  #include "chrome/browser/media/router/discovery/mdns/dns_sd_delegate.h"

@@ -1,13 +1,17 @@
---- a/chrome/browser/browser_features.cc
-+++ b/chrome/browser/browser_features.cc
+Index: src/chrome/browser/browser_features.cc
+===================================================================
+--- src.orig/chrome/browser/browser_features.cc
++++ src/chrome/browser/browser_features.cc
 @@ -234,4 +234,5 @@ BASE_FEATURE(kAutoDeElevate, base::FEATU
  // show both in Chrome Tabs and Windows.
  BASE_FEATURE(kRemovalOfIWAsFromTabCapture, base::FEATURE_ENABLED_BY_DEFAULT);
  
 +BASE_FEATURE(kClearDataOnExit, "ClearDataOnExit", base::FEATURE_DISABLED_BY_DEFAULT);
  }  // namespace features
---- a/chrome/browser/browser_features.h
-+++ b/chrome/browser/browser_features.h
+Index: src/chrome/browser/browser_features.h
+===================================================================
+--- src.orig/chrome/browser/browser_features.h
++++ src/chrome/browser/browser_features.h
 @@ -112,6 +112,7 @@ BASE_DECLARE_FEATURE(kRemovalOfIWAsFromT
  // module, e.g.
  // //chrome/browser/<foo_module>/features.h
@@ -16,8 +20,10 @@
  }  // namespace features
  
  #endif  // CHROME_BROWSER_BROWSER_FEATURES_H_
---- a/chrome/browser/browsing_data/chrome_browsing_data_lifetime_manager.cc
-+++ b/chrome/browser/browsing_data/chrome_browsing_data_lifetime_manager.cc
+Index: src/chrome/browser/browsing_data/chrome_browsing_data_lifetime_manager.cc
+===================================================================
+--- src.orig/chrome/browser/browsing_data/chrome_browsing_data_lifetime_manager.cc
++++ src/chrome/browser/browsing_data/chrome_browsing_data_lifetime_manager.cc
 @@ -19,6 +19,7 @@
  #include "base/task/task_traits.h"
  #include "base/values.h"
@@ -72,8 +78,10 @@
                              BrowsingDataRemoverObserver::Create(
                                  remover, /*filterable_deletion=*/true, profile_,
                                  keep_browser_alive));
---- a/chrome/browser/ungoogled_flag_entries.h
-+++ b/chrome/browser/ungoogled_flag_entries.h
+Index: src/chrome/browser/ungoogled_flag_entries.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_entries.h
++++ src/chrome/browser/ungoogled_flag_entries.h
 @@ -56,4 +56,8 @@
       "Keep old history",
       "Keep history older than 3 months. ungoogled-chromium flag",

@@ -1,7 +1,9 @@
 # Disable additional URLs that are not caught by the "trk" scheme
 
---- a/rlz/lib/financial_ping.cc
-+++ b/rlz/lib/financial_ping.cc
+Index: src/rlz/lib/financial_ping.cc
+===================================================================
+--- src.orig/rlz/lib/financial_ping.cc
++++ src/rlz/lib/financial_ping.cc
 @@ -306,7 +306,7 @@ FinancialPing::PingResponse FinancialPin
    response->clear();
  
@@ -11,8 +13,10 @@
  
    // Use a waitable event to cause this function to block, to match the
    // wininet implementation.
---- a/rlz/lib/lib_values.cc
-+++ b/rlz/lib/lib_values.cc
+Index: src/rlz/lib/lib_values.cc
+===================================================================
+--- src.orig/rlz/lib/lib_values.cc
++++ src/rlz/lib/lib_values.cc
 @@ -45,7 +45,6 @@ const char kSetDccResponseVariable[] = "
  //
  
@@ -21,8 +25,10 @@
  const int kFinancialPort = 443;
  
  // Ping times in 100-nanosecond intervals.
---- a/rlz/lib/lib_values.h
-+++ b/rlz/lib/lib_values.h
+Index: src/rlz/lib/lib_values.h
+===================================================================
+--- src.orig/rlz/lib/lib_values.h
++++ src/rlz/lib/lib_values.h
 @@ -72,7 +72,6 @@ extern const char kSetDccResponseVariabl
  //
  

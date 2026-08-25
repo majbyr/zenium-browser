@@ -29,15 +29,15 @@ runs:
         set -euxo pipefail
 
         PLATFORM_DIR="$PWD"
-        HELIUM_DIR="$PLATFORM_DIR/helium-chromium"
+        ZENIUM_DIR="$PLATFORM_DIR/zenium-chromium"
 
         run_upstream() {
-          python3 "$HELIUM_DIR/$1" "${@:2}"
+          python3 "$ZENIUM_DIR/$1" "${@:2}"
         }
 
         get_version() {
-          run_upstream utils/helium_version.py \
-            --tree "$HELIUM_DIR" \
+          run_upstream utils/zenium_version.py \
+            --tree "$ZENIUM_DIR" \
             --platform-tree "$PLATFORM_DIR" \
             --print
         }
@@ -46,7 +46,7 @@ runs:
         version_before=$(get_version)
         export version_before
 
-        pushd "$HELIUM_DIR"
+        pushd "$ZENIUM_DIR"
           git fetch origin main
           git checkout origin/main
         popd
@@ -70,16 +70,16 @@ runs:
         mkdir -p build/{src,download_cache}
 
         if ! run_upstream utils/downloads.py retrieve \
-          -i "$HELIUM_DIR/downloads.ini" -c build/download_cache; then
+          -i "$ZENIUM_DIR/downloads.ini" -c build/download_cache; then
           run_upstream utils/clone.py -o build/src
         fi
 
         if [ ! -d build/src/chrome ]; then
           run_upstream utils/downloads.py unpack \
-            -i "$HELIUM_DIR/downloads.ini" -c build/download_cache build/src
+            -i "$ZENIUM_DIR/downloads.ini" -c build/download_cache build/src
         fi
 
-        for file in "$HELIUM_DIR/deps.ini" "$PLATFORM_DIR/downloads.ini"; do
+        for file in "$ZENIUM_DIR/deps.ini" "$PLATFORM_DIR/downloads.ini"; do
           if ! [ -f "$file" ]; then continue; fi
 
           run_upstream utils/downloads.py retrieve \
@@ -90,10 +90,10 @@ runs:
         done
 
         run_upstream utils/patches.py apply \
-          --no-fuzz build/src "$HELIUM_DIR/patches"
+          --no-fuzz build/src "$ZENIUM_DIR/patches"
 
         # refresh platform patches if necessary
-        source "$HELIUM_DIR/devutils/set_quilt_vars.sh"
+        source "$ZENIUM_DIR/devutils/set_quilt_vars.sh"
         export QUILT_PATCHES="$PLATFORM_DIR/patches"
 
         pushd build/src
@@ -101,11 +101,11 @@ runs:
         popd
 
         # commit, push, make pr
-        TITLE="update: helium $version_after"
+        TITLE="update: zenium $version_after"
 
-        git config user.name "helium-bot"
-        git config user.email "helium-bot@imput.net"
-        git add -u patches helium-chromium revision.txt
+        git config user.name "zenium-bot"
+        git config user.email "zenium-bot@imput.net"
+        git add -u patches zenium-chromium revision.txt
 
         PLATFORM_HOOK="$PLATFORM_DIR/.github/bump-hook.sh"
         if [ -f "$PLATFORM_HOOK" ]; then

@@ -1,5 +1,7 @@
---- a/services/device/battery/battery_status_service.cc
-+++ b/services/device/battery/battery_status_service.cc
+Index: src/services/device/battery/battery_status_service.cc
+===================================================================
+--- src.orig/services/device/battery/battery_status_service.cc
++++ src/services/device/battery/battery_status_service.cc
 @@ -22,10 +22,7 @@ BatteryStatusService::BatteryStatusServi
        update_callback_(
            base::BindRepeating(&BatteryStatusService::NotifyConsumers,
@@ -82,8 +84,10 @@
    is_shutdown_ = false;
    main_thread_task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
  }
---- a/services/device/battery/battery_status_service.h
-+++ b/services/device/battery/battery_status_service.h
+Index: src/services/device/battery/battery_status_service.h
+===================================================================
+--- src.orig/services/device/battery/battery_status_service.h
++++ src/services/device/battery/battery_status_service.h
 @@ -59,15 +59,10 @@ class BatteryStatusService {
    // Updates current battery status and sends new status to interested
    // render processes. Can be called on any thread via a callback.

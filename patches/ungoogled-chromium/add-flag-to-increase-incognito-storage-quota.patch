@@ -1,5 +1,7 @@
---- a/chrome/browser/ungoogled_flag_entries.h
-+++ b/chrome/browser/ungoogled_flag_entries.h
+Index: src/chrome/browser/ungoogled_flag_entries.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_entries.h
++++ src/chrome/browser/ungoogled_flag_entries.h
 @@ -128,4 +128,8 @@
       "Spoof WebGL Info",
       "Return generic values for WebGLDebugRendererInfo to remove a potential data leak while preventing potential website breakage. ungoogled-chromium flag.",
@@ -9,8 +11,10 @@
 +     "Makes Incognito and Guest profiles compute the storage quota with the same algorithm that regular profiles use. This makes it harder for websites to detect Incognito mode, but may allow sites to induce heavy memory pressure. ungoogled-chromium flag.",
 +     kOsAll, FEATURE_VALUE_TYPE(storage::features::kIncreaseIncognitoStorageQuota)},
  #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_ENTRIES_H_
---- a/storage/browser/quota/quota_features.cc
-+++ b/storage/browser/quota/quota_features.cc
+Index: src/storage/browser/quota/quota_features.cc
+===================================================================
+--- src.orig/storage/browser/quota/quota_features.cc
++++ src/storage/browser/quota/quota_features.cc
 @@ -41,5 +41,9 @@ BASE_FEATURE(kStaticStorageQuota, base::
  // fingerprinting and incognito detection.
  BASE_FEATURE(kIncognitoStaticStorageQuota, base::FEATURE_DISABLED_BY_DEFAULT);
@@ -21,8 +25,10 @@
 +
  }  // namespace features
  }  // namespace storage
---- a/storage/browser/quota/quota_features.h
-+++ b/storage/browser/quota/quota_features.h
+Index: src/storage/browser/quota/quota_features.h
+===================================================================
+--- src.orig/storage/browser/quota/quota_features.h
++++ src/storage/browser/quota/quota_features.h
 @@ -25,6 +25,8 @@ COMPONENT_EXPORT(STORAGE_BROWSER) BASE_D
  COMPONENT_EXPORT(STORAGE_BROWSER)
  BASE_DECLARE_FEATURE(kIncognitoStaticStorageQuota);
@@ -32,8 +38,10 @@
  }  // namespace features
  
  }  // namespace storage
---- a/storage/browser/quota/quota_settings.cc
-+++ b/storage/browser/quota/quota_settings.cc
+Index: src/storage/browser/quota/quota_settings.cc
+===================================================================
+--- src.orig/storage/browser/quota/quota_settings.cc
++++ src/storage/browser/quota/quota_settings.cc
 @@ -9,6 +9,7 @@
  #include <memory>
  #include <utility>

@@ -1,0 +1,301 @@
+--- a/chrome/browser/ui/views/frame/browser_view.cc
++++ b/chrome/browser/ui/views/frame/browser_view.cc
+@@ -1354,7 +1354,8 @@
+                 ->GetPreferredSize()
+                 .height()
+           : 0;
+-  if (toolbar_ && ShouldDrawVerticalTabStrip()) {
++  if (toolbar_ && ShouldDrawVerticalTabStrip() &&
++      !IsToolbarInVerticalSidebar()) {
+     info.toolbar_minimum_height = toolbar_->GetMinimumSize().height();
+   } else if (web_app_frame_toolbar_ && ShouldDrawWebAppFrameToolbar()) {
+     info.toolbar_minimum_height =
+@@ -1514,7 +1515,11 @@
+ 
+ bool BrowserView::ShouldDrawVerticalTabStrip() const {
+   auto* controller = tabs::VerticalTabStripStateController::From(browser_);
+-  return ShouldDrawTabStrip() && controller &&
++  const bool tab_strip_created = horizontal_tab_strip_region_view_ &&
++                                 horizontal_tab_strip_region_view_->tab_strip();
++  const bool should_draw_tab_strip =
++      ShouldDrawTabStrip() || (IsZenModeEnabled() && tab_strip_created);
++  return should_draw_tab_strip && controller &&
+          controller->ShouldDisplayVerticalTabs() && browser_->is_type_normal();
+ }
+ 
+@@ -1523,6 +1528,11 @@
+   return controller && controller->IsTabStripRightAligned();
+ }
+ 
++bool BrowserView::IsToolbarInVerticalSidebar() const {
++  return toolbar_ && vertical_tab_strip_region_view_ &&
++         toolbar_->parent() == vertical_tab_strip_region_view_;
++}
++
+ bool BrowserView::ShouldDrawWebAppFrameToolbar() const {
+   return !IsUnframedModeEnabled() &&
+          GetFrameView()->ShouldShowWebAppFrameToolbar();
+@@ -2000,11 +2010,17 @@
+     reveal_top = true;
+   }
+ 
+-  // Keep the top chrome visible while the omnibox is focused.
++  const bool toolbar_in_side_chrome = IsToolbarInVerticalSidebar();
++
++  // Keep the chrome hosting the toolbar visible while the omnibox is focused.
+   const bool omnibox_focused = toolbar_ && toolbar_->location_bar_view() &&
+                                toolbar_->location_bar_view()->HasFocus();
+   if (omnibox_focused) {
+-    reveal_top = true;
++    if (toolbar_in_side_chrome) {
++      reveal_side = true;
++    } else {
++      reveal_top = true;
++    }
+   }
+ 
+   // Keep the top chrome visible while a bubble/popup anchored inside the top
+@@ -2012,15 +2028,20 @@
+   if (!reveal_top && HasOpenBubbleFromTopContainer()) {
+     reveal_top = true;
+   }
++  if (!reveal_side && HasOpenBubbleFromSideChrome()) {
++    reveal_side = true;
++  }
+ 
+   // Menus are not BubbleDialogDelegate widgets, so handle the app menu
+   // explicitly.
+-  if (!reveal_top) {
+-    auto* toolbar_button_provider = ToolbarButtonProvider::From(browser_);
+-    const AppMenuControl* app_menu_control =
+-        toolbar_button_provider ? toolbar_button_provider->GetAppMenuControl()
+-                                : nullptr;
+-    if (app_menu_control && app_menu_control->IsMenuShowing()) {
++  auto* toolbar_button_provider = ToolbarButtonProvider::From(browser_);
++  const AppMenuControl* app_menu_control =
++      toolbar_button_provider ? toolbar_button_provider->GetAppMenuControl()
++                              : nullptr;
++  if (app_menu_control && app_menu_control->IsMenuShowing()) {
++    if (toolbar_in_side_chrome) {
++      reveal_side = true;
++    } else {
+       reveal_top = true;
+     }
+   }
+@@ -2063,7 +2084,7 @@
+ bool BrowserView::IsZenModeEnabled() const {
+   auto* controller = ZeniumLayoutStateController::From(browser_);
+   return controller && controller->IsZenModeEnabled() && GetIsNormalType() &&
+-         GetSupportsTabStrip() && GetWidget() && !IsFullscreen();
++         GetSupportsTabStrip() && GetWidget();
+ }
+ 
+ void BrowserView::UpdateZenCollapseButtonVisibility() {
+@@ -2073,6 +2094,9 @@
+ }
+ 
+ bool BrowserView::IsPointInZenTopTrigger(const gfx::Point& point) const {
++  if (IsToolbarInVerticalSidebar()) {
++    return false;
++  }
+   return point.y() >= 0 && point.y() < kZenModeRevealTriggerThickness;
+ }
+ 
+@@ -2153,9 +2177,24 @@
+   return false;
+ }
+ 
++bool BrowserView::HasOpenBubbleFromSideChrome() const {
++  if (!vertical_tab_strip_region_view_ || !GetWidget()) {
++    return false;
++  }
++  for (views::Widget* widget :
++       views::Widget::GetAllOwnedWidgets(GetWidget()->GetNativeView())) {
++    if (IsOpenBubbleAnchoredInViewSubtree(widget,
++                                          vertical_tab_strip_region_view_)) {
++      return true;
++    }
++  }
++  return false;
++}
++
+ void BrowserView::AppMenuShown() {
+   if (zen_mode_enabled_) {
+-    UpdateZenModeReveal(/*reveal_top=*/true, /*reveal_side=*/false);
++    UpdateZenModeReveal(/*reveal_top=*/!IsToolbarInVerticalSidebar(),
++                        /*reveal_side=*/IsToolbarInVerticalSidebar());
+   }
+ }
+ 
+@@ -2166,6 +2205,9 @@
+ }
+ 
+ bool BrowserView::IsPointInZenTopChromeBounds(const gfx::Point& point) const {
++  if (IsToolbarInVerticalSidebar()) {
++    return false;
++  }
+   if (!top_container_ || !top_container_->parent()) {
+     return false;
+   }
+--- a/chrome/browser/ui/views/frame/browser_view.h
++++ b/chrome/browser/ui/views/frame/browser_view.h
+@@ -364,6 +364,9 @@
+   // Returns whether vertical tabs are aligned to the right edge.
+   bool IsVerticalTabStripRightAligned() const;
+ 
++  // Returns whether the navigation toolbar is hosted by the vertical sidebar.
++  bool IsToolbarInVerticalSidebar() const;
++
+   // Returns whether the webapp frame toolbar should be drawn.
+   bool ShouldDrawWebAppFrameToolbar() const;
+ 
+@@ -963,6 +966,7 @@
+   bool IsPointInZenTopChromeBounds(const gfx::Point& point) const;
+   bool IsPointInZenSideChromeBounds(const gfx::Point& point) const;
+   bool HasOpenBubbleFromTopContainer() const;
++  bool HasOpenBubbleFromSideChrome() const;
+   bool GetCursorLocationInBrowserView(gfx::Point* cursor_location) const;
+ 
+   // Callback for the loading animation(s) associated with this view.
+--- a/chrome/browser/ui/views/frame/layout/browser_view_tabbed_layout_impl.cc
++++ b/chrome/browser/ui/views/frame/layout/browser_view_tabbed_layout_impl.cc
+@@ -132,17 +132,10 @@
+   }
+ 
+   state.vertical_tab_strip_padding = kZenModeVTSPadding;
+-  const int revealed_top_padding =
+-      std::max(0, GetGenericFrameRadius() -
+-                      GetLayoutConstant(LayoutConstant::kZeniumBasePadding));
+-  if (delegate.IsZenModeTopChromePinned()) {
+-    state.vertical_tab_strip_top_padding = revealed_top_padding;
+-  } else {
+-    state.vertical_tab_strip_top_padding =
+-        ScaleExtent(state.vertical_tab_strip_padding,
+-                    1.0f - state.top_chrome_ratio) +
+-        ScaleExtent(revealed_top_padding, state.top_chrome_ratio);
+-  }
++  // Keep all four floating-sidebar insets equal. Tying the top inset to the
++  // top-chrome animation caused the whole sidebar to jump when the pointer
++  // briefly touched the top edge.
++  state.vertical_tab_strip_top_padding = kZenModeVTSPadding;
+   return state;
+ }
+ 
+@@ -1563,7 +1556,8 @@
+     float top_chrome_ratio) const {
+ #if BUILDFLAG(IS_LINUX)
+   constexpr int kZenModeTopBorderHeight = 4;
+-  if (top_chrome_ratio >= 1.0f || views().browser_view->bounds().y() > 0) {
++  if (layout_data_->tab_strip_type == TabStripType::kVertical ||
++      top_chrome_ratio >= 1.0f || views().browser_view->bounds().y() > 0) {
+     return;
+   }
+   if (top_container_layout.bounds.height() < kZenModeTopBorderHeight) {
+--- a/chrome/browser/ui/views/frame/vertical_tab_strip_region_view.cc
++++ b/chrome/browser/ui/views/frame/vertical_tab_strip_region_view.cc
+@@ -1129,8 +1129,10 @@
+ void VerticalTabStripRegionView::OnOmniboxPopupVisibilityChanged(bool is_open) {
+   if (is_open) {
+     if (!omnibox_open_lock_) {
+-      omnibox_open_lock_ =
+-          GetExpandOnHoverLock(ExpandOnHoverLockType::kForceCollapse);
++      const auto lock_type = browser_view_->IsToolbarInVerticalSidebar()
++                                 ? ExpandOnHoverLockType::kKeepExpanded
++                                 : ExpandOnHoverLockType::kForceCollapse;
++      omnibox_open_lock_ = GetExpandOnHoverLock(lock_type);
+       UpdateExpandOnHoverState();
+     }
+   } else {
+--- a/chrome/browser/ui/views/toolbar/toolbar_view.cc
++++ b/chrome/browser/ui/views/toolbar/toolbar_view.cc
+@@ -1754,6 +1754,11 @@
+ }
+ 
+ void ToolbarView::VerticalTabsCollapseButtonPressed(const ui::Event& event) {
++  if (browser_view_->IsZenModeEnabledForLayout()) {
++    browser_view_->ToggleZenModeSideChrome();
++    return;
++  }
++
+   auto* controller =
+       tabs::VerticalTabStripStateController::From(browser_view_->browser());
+   if (!controller) {
+@@ -2108,23 +2113,30 @@
+ 
+   auto* controller =
+       tabs::VerticalTabStripStateController::From(browser_view_->browser());
+-  const bool zen_hide = browser_view_->IsZenModeEnabledForLayout() &&
+-                        !browser_view_->IsZenModeSideChromePinned();
+-  const bool should_show = controller && IsVerticalLayout() &&
+-                           show_vertical_tabs_collapse_button_.GetValue() &&
+-                           !zen_hide;
++  const bool zen_mode = browser_view_->IsZenModeEnabledForLayout();
++  const bool should_show =
++      controller && IsVerticalLayout() &&
++      (zen_mode || show_vertical_tabs_collapse_button_.GetValue());
+   vertical_tabs_collapse_button_->SetVisible(should_show);
+ 
+   if (!should_show) {
+     return;
+   }
+ 
++  const bool side_chrome_pinned =
++      zen_mode && browser_view_->IsZenModeSideChromePinned();
+   const bool should_use_menu_open_icon =
+       controller->IsCollapsed() == controller->IsTabStripRightAligned();
+   const gfx::VectorIcon& icon =
+-      should_use_menu_open_icon ? views::kMenuOpenOldIcon : views::kMenuCloseCustomIcon;
+-  const int text_id = controller->IsCollapsed() ? IDS_EXPAND_VERTICAL_TABS
+-                                                : IDS_COLLAPSE_VERTICAL_TABS;
++      zen_mode ? (side_chrome_pinned ? views::kUnpinOldIcon : views::kKeepIcon)
++               : (should_use_menu_open_icon ? views::kMenuOpenOldIcon
++                                            : views::kMenuCloseCustomIcon);
++  const int text_id =
++      zen_mode
++          ? (side_chrome_pinned ? IDS_SIDE_PANEL_HEADER_UNPIN_BUTTON_TOOLTIP
++                                : IDS_SIDE_PANEL_HEADER_PIN_BUTTON_TOOLTIP)
++          : (controller->IsCollapsed() ? IDS_EXPAND_VERTICAL_TABS
++                                       : IDS_COLLAPSE_VERTICAL_TABS);
+   const std::u16string text = l10n_util::GetStringUTF16(text_id);
+ 
+   vertical_tabs_collapse_button_->SetVectorIcon(icon);
+--- a/chrome/browser/ui/views/omnibox/omnibox_popup_view_views.cc
++++ b/chrome/browser/ui/views/omnibox/omnibox_popup_view_views.cc
+@@ -51,6 +51,9 @@
+ 
+ namespace {
+ 
++constexpr int kZeniumVerticalOmniboxPopupWidth = 520;
++constexpr int kZeniumVerticalOmniboxPopupMargin = 8;
++
+ #if BUILDFLAG(IS_WIN)
+ // Removes forced software compositing for `AutocompletePopupWidget` below.
+ // TODO(thestig): Remove this kill switch after a safe rollout, in M145.
+@@ -753,6 +756,26 @@
+       -RoundedOmniboxResultsFrame::GetLocationBarAlignmentInsets());
+   content_rect.set_height(popup_height);
+ 
++  BrowserView* browser_view =
++      BrowserView::GetBrowserViewForBrowser(location_bar_view_->browser());
++  if (browser_view && browser_view->IsToolbarInVerticalSidebar()) {
++    const gfx::Rect browser_bounds = browser_view->GetBoundsInScreen();
++    const gfx::Insets shadow_insets =
++        RoundedOmniboxResultsFrame::GetShadowInsets();
++    const int available_width = std::max(
++        0, browser_bounds.width() - 2 * kZeniumVerticalOmniboxPopupMargin -
++               shadow_insets.width());
++    const int popup_width =
++        std::min(kZeniumVerticalOmniboxPopupWidth, available_width);
++    content_rect.set_width(std::max(content_rect.width(), popup_width));
++    content_rect.set_x(
++        browser_view->IsVerticalTabStripRightAligned()
++            ? browser_bounds.right() - kZeniumVerticalOmniboxPopupMargin -
++                  shadow_insets.right() - content_rect.width()
++            : browser_bounds.x() + kZeniumVerticalOmniboxPopupMargin +
++                  shadow_insets.left());
++  }
++
+   if (omnibox::IsWebUIOmniboxPopupEnabled() &&
+       !omnibox::IsWebUIOmniboxFullPopupEnabled() &&
+       !omnibox::IsAimPopupFeatureEnabled() &&
+

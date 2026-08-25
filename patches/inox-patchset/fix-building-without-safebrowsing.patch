@@ -1,5 +1,7 @@
---- a/chrome/browser/chrome_content_browser_client_navigation_throttles.cc
-+++ b/chrome/browser/chrome_content_browser_client_navigation_throttles.cc
+Index: src/chrome/browser/chrome_content_browser_client_navigation_throttles.cc
+===================================================================
+--- src.orig/chrome/browser/chrome_content_browser_client_navigation_throttles.cc
++++ src/chrome/browser/chrome_content_browser_client_navigation_throttles.cc
 @@ -421,10 +421,6 @@ void CreateAndAddChromeThrottlesForNavig
            Profile::FromBrowserContext(context)),
        SafeSearchFactory::GetForBrowserContext(context)));
@@ -11,8 +13,10 @@
    registry.AddThrottle(std::make_unique<SSLErrorNavigationThrottle>(
        registry, base::BindOnce(&HandleSSLErrorWrapper),
        base::BindOnce(&IsInWebApp),
---- a/chrome/browser/component_updater/file_type_policies_component_installer.cc
-+++ b/chrome/browser/component_updater/file_type_policies_component_installer.cc
+Index: src/chrome/browser/component_updater/file_type_policies_component_installer.cc
+===================================================================
+--- src.orig/chrome/browser/component_updater/file_type_policies_component_installer.cc
++++ src/chrome/browser/component_updater/file_type_policies_component_installer.cc
 @@ -36,21 +36,6 @@ const uint8_t kFileTypePoliciesPublicKey
  const char kFileTypePoliciesManifestName[] = "File Type Policies";
  
@@ -35,8 +39,10 @@
  }
  
  }  // namespace
---- a/chrome/browser/download/download_item_model.cc
-+++ b/chrome/browser/download/download_item_model.cc
+Index: src/chrome/browser/download/download_item_model.cc
+===================================================================
+--- src.orig/chrome/browser/download/download_item_model.cc
++++ src/chrome/browser/download/download_item_model.cc
 @@ -128,7 +128,7 @@ class DownloadItemModelData : public bas
  
    // Danger level of the file determined based on the file type and whether
@@ -63,8 +69,10 @@
    DownloadItemModelData* data = DownloadItemModelData::GetOrCreate(download_);
    data->danger_level_ = danger_level;
  }
---- a/chrome/browser/extensions/api/webstore_private/webstore_private_api.cc
-+++ b/chrome/browser/extensions/api/webstore_private/webstore_private_api.cc
+Index: src/chrome/browser/extensions/api/webstore_private/webstore_private_api.cc
+===================================================================
+--- src.orig/chrome/browser/extensions/api/webstore_private/webstore_private_api.cc
++++ src/chrome/browser/extensions/api/webstore_private/webstore_private_api.cc
 @@ -915,18 +915,6 @@ void WebstorePrivateBeginInstallWithMani
  
  void WebstorePrivateBeginInstallWithManifest3Function::
@@ -84,8 +92,10 @@
  }
  
  void WebstorePrivateBeginInstallWithManifest3Function::OnInstallPromptDone(
---- a/chrome/browser/safe_browsing/BUILD.gn
-+++ b/chrome/browser/safe_browsing/BUILD.gn
+Index: src/chrome/browser/safe_browsing/BUILD.gn
+===================================================================
+--- src.orig/chrome/browser/safe_browsing/BUILD.gn
++++ src/chrome/browser/safe_browsing/BUILD.gn
 @@ -7,6 +7,7 @@ import("//components/safe_browsing/build
  import("//extensions/buildflags/buildflags.gni")
  
@@ -118,8 +128,10 @@
  }
  
  source_set("unit_tests") {
---- a/chrome/browser/ui/webui/downloads/downloads_dom_handler.cc
-+++ b/chrome/browser/ui/webui/downloads/downloads_dom_handler.cc
+Index: src/chrome/browser/ui/webui/downloads/downloads_dom_handler.cc
+===================================================================
+--- src.orig/chrome/browser/ui/webui/downloads/downloads_dom_handler.cc
++++ src/chrome/browser/ui/webui/downloads/downloads_dom_handler.cc
 @@ -25,7 +25,6 @@
  #include "base/values.h"
  #include "build/branding_buildflags.h"
@@ -149,8 +161,10 @@
      DownloadItemModel item_model(download);
      if (!item_model.ShouldShowInUi() ||
          download->GetState() == download::DownloadItem::IN_PROGRESS) {
---- a/chrome/browser/ui/webui/downloads/downloads_dom_handler.h
-+++ b/chrome/browser/ui/webui/downloads/downloads_dom_handler.h
+Index: src/chrome/browser/ui/webui/downloads/downloads_dom_handler.h
+===================================================================
+--- src.orig/chrome/browser/ui/webui/downloads/downloads_dom_handler.h
++++ src/chrome/browser/ui/webui/downloads/downloads_dom_handler.h
 @@ -13,7 +13,6 @@
  #include "base/memory/raw_ptr.h"
  #include "base/memory/weak_ptr.h"
@@ -159,8 +173,10 @@
  #include "chrome/browser/download/download_warning_desktop_hats_utils.h"
  #include "chrome/browser/ui/webui/downloads/downloads.mojom-forward.h"
  #include "chrome/browser/ui/webui/downloads/downloads_list_tracker.h"
---- a/chrome/renderer/chrome_content_renderer_client.cc
-+++ b/chrome/renderer/chrome_content_renderer_client.cc
+Index: src/chrome/renderer/chrome_content_renderer_client.cc
+===================================================================
+--- src.orig/chrome/renderer/chrome_content_renderer_client.cc
++++ src/chrome/renderer/chrome_content_renderer_client.cc
 @@ -111,7 +111,6 @@
  #include "components/pdf/common/pdf_util.h"
  #include "components/permissions/features.h"
@@ -169,8 +185,10 @@
  #include "components/sampling_profiler/process_type.h"
  #include "components/sampling_profiler/thread_profiler.h"
  #include "components/security_interstitials/content/renderer/security_interstitial_page_controller_delegate_impl.h"
---- a/extensions/browser/blocklist_state_fetcher.cc
-+++ b/extensions/browser/blocklist_state_fetcher.cc
+Index: src/extensions/browser/blocklist_state_fetcher.cc
+===================================================================
+--- src.orig/extensions/browser/blocklist_state_fetcher.cc
++++ src/extensions/browser/blocklist_state_fetcher.cc
 @@ -69,8 +69,7 @@ void BlocklistStateFetcher::SendRequest(
    std::string request_str;
    request.SerializeToString(&request_str);
@@ -194,8 +212,10 @@
  void BlocklistStateFetcher::OnURLLoaderComplete(
      network::SimpleURLLoader* url_loader,
      std::optional<std::string> response_body) {
---- a/extensions/browser/blocklist_state_fetcher.h
-+++ b/extensions/browser/blocklist_state_fetcher.h
+Index: src/extensions/browser/blocklist_state_fetcher.h
+===================================================================
+--- src.orig/extensions/browser/blocklist_state_fetcher.h
++++ src/extensions/browser/blocklist_state_fetcher.h
 @@ -41,8 +41,6 @@ class BlocklistStateFetcher {
  
    virtual void Request(const std::string& id, RequestCallback callback);
@@ -205,8 +225,10 @@
   protected:
    void OnURLLoaderComplete(network::SimpleURLLoader* url_loader,
                             std::optional<std::string> response_body);
---- a/chrome/browser/external_protocol/BUILD.gn
-+++ b/chrome/browser/external_protocol/BUILD.gn
+Index: src/chrome/browser/external_protocol/BUILD.gn
+===================================================================
+--- src.orig/chrome/browser/external_protocol/BUILD.gn
++++ src/chrome/browser/external_protocol/BUILD.gn
 @@ -38,6 +38,7 @@ source_set("impl") {
      "//chrome/browser/safe_browsing",
      "//chrome/browser/ui/browser_window",

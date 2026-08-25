@@ -3,12 +3,12 @@ License, v. 2.0. If a copy of the MPL was not distributed with this file,
 You can obtain one at https://mozilla.org/MPL/2.0/.
 
 Copyright (c) 2019, The Brave Authors
-Copyright (c) 2025, The Helium Authors
+Copyright (c) 2025, The Zenium Authors
 
 Alternatively, the contents of this file may be used under the terms
 of the GNU General Public License Version 3, as described below:
 
-Copyright (C) 2025 The Helium Authors
+Copyright (C) 2025 The Zenium Authors
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -23,8 +23,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+Index: src/chrome/browser/importer/chrome_importer_list.cc
+===================================================================
 --- /dev/null
-+++ b/chrome/browser/importer/chrome_importer_list.cc
++++ src/chrome/browser/importer/chrome_importer_list.cc
 @@ -0,0 +1,161 @@
 +/* Copyright (c) 2019 The Brave Authors, 2025 imput. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -187,8 +189,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +}
 +
 +}  // namespace
+Index: src/chrome/common/importer/chrome_importer_utils.cc
+===================================================================
 --- /dev/null
-+++ b/chrome/common/importer/chrome_importer_utils.cc
++++ src/chrome/common/importer/chrome_importer_utils.cc
 @@ -0,0 +1,226 @@
 +/* Copyright (c) 2019 The Brave Authors, 2025 imput. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -416,8 +420,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +  return std::nullopt;
 +}
 +#endif
+Index: src/chrome/common/importer/chrome_importer_utils.h
+===================================================================
 --- /dev/null
-+++ b/chrome/common/importer/chrome_importer_utils.h
++++ src/chrome/common/importer/chrome_importer_utils.h
 @@ -0,0 +1,66 @@
 +/* Copyright (c) 2019 The Brave Authors, 2025 imput. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -485,8 +491,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +#endif
 +
 +#endif  // BRAVE_COMMON_IMPORTER_CHROME_IMPORTER_UTILS_H_
+Index: src/chrome/common/importer/importer_constants.h
+===================================================================
 --- /dev/null
-+++ b/chrome/common/importer/importer_constants.h
++++ src/chrome/common/importer/importer_constants.h
 @@ -0,0 +1,38 @@
 +/* Copyright (c) 2020 The Brave Authors. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -526,8 +534,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +// End of browser names section
 +
 +#endif  // BRAVE_COMMON_IMPORTER_IMPORTER_CONSTANTS_H_
+Index: src/chrome/common/importer/scoped_copy_file.cc
+===================================================================
 --- /dev/null
-+++ b/chrome/common/importer/scoped_copy_file.cc
++++ src/chrome/common/importer/scoped_copy_file.cc
 @@ -0,0 +1,20 @@
 +/* Copyright 2020 The Brave Authors, 2025 imput. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -549,8 +559,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +  if (base::PathExists(copied_file_path_))
 +    base::DeleteFile(copied_file_path_);
 +}
+Index: src/chrome/common/importer/scoped_copy_file.h
+===================================================================
 --- /dev/null
-+++ b/chrome/common/importer/scoped_copy_file.h
++++ src/chrome/common/importer/scoped_copy_file.h
 @@ -0,0 +1,27 @@
 +/* Copyright 2020 The Brave Authors. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -579,8 +591,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +};
 +
 +#endif  // BRAVE_COMMON_IMPORTER_SCOPED_COPY_FILE_H_
+Index: src/chrome/common/importer/chrome_importer_utils_linux.cc
+===================================================================
 --- /dev/null
-+++ b/chrome/common/importer/chrome_importer_utils_linux.cc
++++ src/chrome/common/importer/chrome_importer_utils_linux.cc
 @@ -0,0 +1,133 @@
 +/* Copyright (c) 2018 The Brave Authors, 2025 imput. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -715,8 +729,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +
 +  return result;
 +}
+Index: src/chrome/common/importer/chrome_importer_utils_mac.mm
+===================================================================
 --- /dev/null
-+++ b/chrome/common/importer/chrome_importer_utils_mac.mm
++++ src/chrome/common/importer/chrome_importer_utils_mac.mm
 @@ -0,0 +1,82 @@
 +/* Copyright (c) 2018 The Brave Authors, 2025 imput. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -800,8 +816,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +  base::FilePath result = base::apple::GetUserLibraryPath();
 +  return result.Append("Application Support").Append("BraveSoftware").Append("Brave-Browser");
 +}
+Index: src/chrome/common/importer/chrome_importer_utils_win.cc
+===================================================================
 --- /dev/null
-+++ b/chrome/common/importer/chrome_importer_utils_win.cc
++++ src/chrome/common/importer/chrome_importer_utils_win.cc
 @@ -0,0 +1,155 @@
 +/* Copyright (c) 2021 The Brave Authors, 2025 imput. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -958,8 +976,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +      .AppendASCII("Brave-Browser")
 +      .AppendASCII("User Data");
 +}
+Index: src/chrome/browser/ui/webui/settings/brave_import_data_handler.cc
+===================================================================
 --- /dev/null
-+++ b/chrome/browser/ui/webui/settings/brave_import_data_handler.cc
++++ src/chrome/browser/ui/webui/settings/brave_import_data_handler.cc
 @@ -0,0 +1,221 @@
 +/* Copyright (c) 2020 The Brave Authors. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -1182,8 +1202,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +}
 +#endif
 +}  // namespace settings
+Index: src/chrome/browser/ui/webui/settings/brave_import_data_handler.h
+===================================================================
 --- /dev/null
-+++ b/chrome/browser/ui/webui/settings/brave_import_data_handler.h
++++ src/chrome/browser/ui/webui/settings/brave_import_data_handler.h
 @@ -0,0 +1,86 @@
 +/* Copyright (c) 2020 The Brave Authors. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -1271,8 +1293,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +}  // namespace settings
 +
 +#endif  // BRAVE_BROWSER_UI_WEBUI_SETTINGS_BRAVE_IMPORT_DATA_HANDLER_H_
+Index: src/chrome/browser/ui/webui/settings/brave_importer_observer.cc
+===================================================================
 --- /dev/null
-+++ b/chrome/browser/ui/webui/settings/brave_importer_observer.cc
++++ src/chrome/browser/ui/webui/settings/brave_importer_observer.cc
 @@ -0,0 +1,85 @@
 +/* Copyright (c) 2022 The Brave Authors. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -1359,8 +1383,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +BraveImporterObserver::GetImporterHostForTesting() {
 +  return importer_host_.get();
 +}
+Index: src/chrome/browser/ui/webui/settings/brave_importer_observer.h
+===================================================================
 --- /dev/null
-+++ b/chrome/browser/ui/webui/settings/brave_importer_observer.h
++++ src/chrome/browser/ui/webui/settings/brave_importer_observer.h
 @@ -0,0 +1,50 @@
 +/* Copyright (c) 2022 The Brave Authors. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -1412,8 +1438,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +};
 +
 +#endif  // BRAVE_BROWSER_UI_WEBUI_SETTINGS_BRAVE_IMPORTER_OBSERVER_H_
+Index: src/chrome/browser/importer/brave_external_process_importer_client.cc
+===================================================================
 --- /dev/null
-+++ b/chrome/browser/importer/brave_external_process_importer_client.cc
++++ src/chrome/browser/importer/brave_external_process_importer_client.cc
 @@ -0,0 +1,114 @@
 +/* Copyright (c) 2020 The Brave Authors. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -1529,8 +1557,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +  bridge_->NotifyItemEnded(import_item);
 +  brave_profile_import_->ReportImportItemFinished(import_item);
 +}
+Index: src/chrome/browser/importer/brave_external_process_importer_client.h
+===================================================================
 --- /dev/null
-+++ b/chrome/browser/importer/brave_external_process_importer_client.h
++++ src/chrome/browser/importer/brave_external_process_importer_client.h
 @@ -0,0 +1,47 @@
 +/* Copyright (c) 2020 The Brave Authors. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -1579,8 +1609,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +};
 +
 +#endif  // BRAVE_BROWSER_IMPORTER_BRAVE_EXTERNAL_PROCESS_IMPORTER_CLIENT_H_
+Index: src/chrome/browser/importer/brave_external_process_importer_host.cc
+===================================================================
 --- /dev/null
-+++ b/chrome/browser/importer/brave_external_process_importer_host.cc
++++ src/chrome/browser/importer/brave_external_process_importer_host.cc
 @@ -0,0 +1,126 @@
 +/* Copyright (c) 2019 The Brave Authors. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -1708,8 +1740,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +}
 +
 +#endif
+Index: src/chrome/browser/importer/brave_external_process_importer_host.h
+===================================================================
 --- /dev/null
-+++ b/chrome/browser/importer/brave_external_process_importer_host.h
++++ src/chrome/browser/importer/brave_external_process_importer_host.h
 @@ -0,0 +1,66 @@
 +/* Copyright (c) 2019 The Brave Authors. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -1777,8 +1811,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +};
 +
 +#endif  // BRAVE_BROWSER_IMPORTER_BRAVE_EXTERNAL_PROCESS_IMPORTER_HOST_H_
+Index: src/chrome/browser/ui/webui/settings/brave_full_disk_access_confirm_dialog_delegate.h
+===================================================================
 --- /dev/null
-+++ b/chrome/browser/ui/webui/settings/brave_full_disk_access_confirm_dialog_delegate.h
++++ src/chrome/browser/ui/webui/settings/brave_full_disk_access_confirm_dialog_delegate.h
 @@ -0,0 +1,44 @@
 +/* Copyright (c) 2022 The Brave Authors. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -1824,8 +1860,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +};
 +
 +#endif  // BRAVE_BROWSER_UI_WEBUI_SETTINGS_BRAVE_FULL_DISK_ACCESS_CONFIRM_DIALOG_DELEGATE_H_
+Index: src/chrome/browser/ui/webui/settings/brave_full_disk_access_confirm_dialog_delegate_mac.mm
+===================================================================
 --- /dev/null
-+++ b/chrome/browser/ui/webui/settings/brave_full_disk_access_confirm_dialog_delegate_mac.mm
++++ src/chrome/browser/ui/webui/settings/brave_full_disk_access_confirm_dialog_delegate_mac.mm
 @@ -0,0 +1,63 @@
 +/* Copyright (c) 2022 The Brave Authors. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -1890,8 +1928,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +  chrome::AddTabAt(browser_, GURL("https://github.com/imputnet/helium-macos/wiki/Import-data-from-Safari"), target_index,
 +                   true /* foreground */);
 +}
+Index: src/chrome/common/importer/chrome_profile_import.mojom
+===================================================================
 --- /dev/null
-+++ b/chrome/common/importer/chrome_profile_import.mojom
++++ src/chrome/common/importer/chrome_profile_import.mojom
 @@ -0,0 +1,26 @@
 +/* Copyright (c) 2020 The Brave Authors. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -1919,8 +1959,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +  // Tell the importer that we're done with one item.
 +  ReportImportItemFinished(chrome.mojom.ImportItem item);
 +};
+Index: src/chrome/browser/importer/brave_in_process_importer_bridge.cc
+===================================================================
 --- /dev/null
-+++ b/chrome/browser/importer/brave_in_process_importer_bridge.cc
++++ src/chrome/browser/importer/brave_in_process_importer_bridge.cc
 @@ -0,0 +1,10 @@
 +/* Copyright 2020 The Brave Authors. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -1932,8 +1974,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +#include "chrome/browser/importer/profile_writer.h"
 +
 +BraveInProcessImporterBridge::~BraveInProcessImporterBridge() = default;
+Index: src/chrome/browser/importer/brave_in_process_importer_bridge.h
+===================================================================
 --- /dev/null
-+++ b/chrome/browser/importer/brave_in_process_importer_bridge.h
++++ src/chrome/browser/importer/brave_in_process_importer_bridge.h
 @@ -0,0 +1,25 @@
 +/* Copyright 2020 The Brave Authors. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -1960,8 +2004,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +};
 +
 +#endif  // BRAVE_BROWSER_IMPORTER_BRAVE_IN_PROCESS_IMPORTER_BRIDGE_H_
+Index: src/chrome/browser/importer/extensions_import_helpers.cc
+===================================================================
 --- /dev/null
-+++ b/chrome/browser/importer/extensions_import_helpers.cc
++++ src/chrome/browser/importer/extensions_import_helpers.cc
 @@ -0,0 +1,383 @@
 +/* Copyright (c) 2022 The Brave Authors. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -2346,8 +2392,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +}
 +
 +}  // namespace extensions_import
+Index: src/chrome/browser/importer/extensions_import_helpers.h
+===================================================================
 --- /dev/null
-+++ b/chrome/browser/importer/extensions_import_helpers.h
++++ src/chrome/browser/importer/extensions_import_helpers.h
 @@ -0,0 +1,104 @@
 +/* Copyright (c) 2022 The Brave Authors. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -2453,8 +2501,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +}  // namespace extensions_import
 +
 +#endif  // BRAVE_BROWSER_IMPORTER_EXTENSIONS_IMPORT_HELPERS_H_
+Index: src/chrome/utility/importer/brave_profile_import_impl.cc
+===================================================================
 --- /dev/null
-+++ b/chrome/utility/importer/brave_profile_import_impl.cc
++++ src/chrome/utility/importer/brave_profile_import_impl.cc
 @@ -0,0 +1,116 @@
 +/* Copyright (c) 2020 The Brave Authors. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -2572,8 +2622,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +  bridge_.reset();
 +  import_thread_.reset();
 +}
+Index: src/chrome/utility/importer/brave_profile_import_impl.h
+===================================================================
 --- /dev/null
-+++ b/chrome/utility/importer/brave_profile_import_impl.h
++++ src/chrome/utility/importer/brave_profile_import_impl.h
 @@ -0,0 +1,64 @@
 +/* Copyright (c) 2020 The Brave Authors. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -2639,8 +2691,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +};
 +
 +#endif  // BRAVE_UTILITY_IMPORTER_BRAVE_PROFILE_IMPORT_IMPL_H_
+Index: src/chrome/utility/importer/brave_external_process_importer_bridge.cc
+===================================================================
 --- /dev/null
-+++ b/chrome/utility/importer/brave_external_process_importer_bridge.cc
++++ src/chrome/utility/importer/brave_external_process_importer_bridge.cc
 @@ -0,0 +1,17 @@
 +/* Copyright 2020 The Brave Authors. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -2659,8 +2713,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +
 +BraveExternalProcessImporterBridge::
 +    ~BraveExternalProcessImporterBridge() = default;
+Index: src/chrome/utility/importer/brave_external_process_importer_bridge.h
+===================================================================
 --- /dev/null
-+++ b/chrome/utility/importer/brave_external_process_importer_bridge.h
++++ src/chrome/utility/importer/brave_external_process_importer_bridge.h
 @@ -0,0 +1,29 @@
 +/* Copyright 2020 The Brave Authors. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -2691,8 +2747,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +};
 +
 +#endif  // BRAVE_UTILITY_IMPORTER_BRAVE_EXTERNAL_PROCESS_IMPORTER_BRIDGE_H_
+Index: src/chrome/utility/importer/chrome_importer.cc
+===================================================================
 --- /dev/null
-+++ b/chrome/utility/importer/chrome_importer.cc
++++ src/chrome/utility/importer/chrome_importer.cc
 @@ -0,0 +1,280 @@
 +/* Copyright (c) 2019 The Brave Authors. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -2974,8 +3032,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +double ChromeImporter::chromeTimeToDouble(int64_t time) {
 +  return ((time * 10 - 0x19DB1DED53E8000) / 10000) / 1000;
 +}
+Index: src/chrome/utility/importer/chrome_importer.h
+===================================================================
 --- /dev/null
-+++ b/chrome/utility/importer/chrome_importer.h
++++ src/chrome/utility/importer/chrome_importer.h
 @@ -0,0 +1,76 @@
 +/* Copyright (c) 2019 The Brave Authors. All rights reserved.
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -3053,8 +3113,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +};
 +
 +#endif  // BRAVE_UTILITY_IMPORTER_CHROME_IMPORTER_H_
---- a/chrome/app/generated_resources.grd
-+++ b/chrome/app/generated_resources.grd
+Index: src/chrome/app/generated_resources.grd
+===================================================================
+--- src.orig/chrome/app/generated_resources.grd
++++ src/chrome/app/generated_resources.grd
 @@ -11554,6 +11554,20 @@ Check your passwords anytime in <ph name
          <message name="IDS_IMPORT_FROM_SAFARI" desc="browser combo box: Safari">
            Safari
@@ -3064,7 +3126,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 +            Full Disk Access required
 +          </message>
 +          <message name="IDS_IMPORT_FULL_DISK_ACCESS_DIALOG_MESSAGE" desc="Message for the dialog shown when Full Disk Access is needed to import bookmarks from Safari.">
-+            Helium needs Full Disk Access to import your Bookmarks from Safari.
++            Zenium needs Full Disk Access to import your Bookmarks from Safari.
 +          </message>
 +          <message name="IDS_IMPORT_FULL_DISK_ACCESS_DIALOG_LINK" desc="Help link text in the dialog shown when Full Disk Access is needed to import from Safari.">
 +            Learn how to grant Full Disk Access from your System Preferences.

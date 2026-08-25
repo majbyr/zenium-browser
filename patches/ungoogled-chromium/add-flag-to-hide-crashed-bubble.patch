@@ -1,8 +1,10 @@
 # Add flag --hide-crashed-bubble to hide the bubble box:
 # "Restore Pages? Chromium didn't shut down correctly."
 
---- a/chrome/browser/ui/startup/infobar_utils.cc
-+++ b/chrome/browser/ui/startup/infobar_utils.cc
+Index: src/chrome/browser/ui/startup/infobar_utils.cc
+===================================================================
+--- src.orig/chrome/browser/ui/startup/infobar_utils.cc
++++ src/chrome/browser/ui/startup/infobar_utils.cc
 @@ -147,6 +147,7 @@ void AddInfoBarsIfNecessary(BrowserWindo
  
    // Web apps should not display the session restore bubble (crbug.com/40800614)
@@ -11,8 +13,10 @@
        !is_web_app && HasPendingUncleanExit(browser->GetProfile());
    base::UmaHistogramBoolean("Startup.CrashBubbleShown", should_display_bubble);
    if (should_display_bubble) {
---- a/chrome/browser/ungoogled_flag_entries.h
-+++ b/chrome/browser/ungoogled_flag_entries.h
+Index: src/chrome/browser/ungoogled_flag_entries.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_entries.h
++++ src/chrome/browser/ungoogled_flag_entries.h
 @@ -28,4 +28,8 @@
       "Show avatar/people/profile button",
       "Show avatar/people/profile button in the browser toolbar. ungoogled-chromium flag.",

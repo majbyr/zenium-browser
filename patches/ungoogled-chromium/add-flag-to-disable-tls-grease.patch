@@ -1,5 +1,7 @@
---- a/chrome/browser/ungoogled_flag_entries.h
-+++ b/chrome/browser/ungoogled_flag_entries.h
+Index: src/chrome/browser/ungoogled_flag_entries.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_entries.h
++++ src/chrome/browser/ungoogled_flag_entries.h
 @@ -76,4 +76,8 @@
       "Hide tab close buttons",
       "Hides the close buttons on tabs. ungoogled-chromium flag.",
@@ -9,8 +11,10 @@
 +     "Turn off GREASE (Generate Random Extensions And Sustain Extensibility) for TLS connections. ungoogled-chromium flag.",
 +     kOsAll, SINGLE_VALUE_TYPE("disable-grease-tls")},
  #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_ENTRIES_H_
---- a/net/socket/ssl_client_socket_impl.cc
-+++ b/net/socket/ssl_client_socket_impl.cc
+Index: src/net/socket/ssl_client_socket_impl.cc
+===================================================================
+--- src.orig/net/socket/ssl_client_socket_impl.cc
++++ src/net/socket/ssl_client_socket_impl.cc
 @@ -14,6 +14,7 @@
  #include <string_view>
  #include <utility>

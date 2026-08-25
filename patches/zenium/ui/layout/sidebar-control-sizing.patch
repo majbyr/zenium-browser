@@ -1,0 +1,186 @@
+--- a/chrome/browser/ui/views/toolbar/toolbar_view.cc
++++ b/chrome/browser/ui/views/toolbar/toolbar_view.cc
+@@ -193,6 +193,7 @@
+     kToolbarFlexOrderOffset + 4;
+ constexpr int kVerticalSidebarHorizontalPadding = 6;
+ constexpr int kVerticalSidebarRowGap = 4;
++constexpr int kVerticalSidebarLocationBarHeight = 36;
+ constexpr int kVerticalSidebarMinimumLocationBarWidth = 120;
+ 
+ constexpr int kDynamicNewTabButtonIconSize = 16;
+@@ -2026,9 +2027,8 @@
+     location_bar_view_->SetProperty(views::kFlexBehaviorKey,
+                                     location_bar_flex_rule);
+     if (is_vertical_layout) {
+-      const int preferred_height =
+-          location_bar_view_->GetPreferredSize().height();
+-      location_bar_view_->SetPreferredSize(gfx::Size(0, preferred_height));
++      location_bar_view_->SetPreferredSize(
++          gfx::Size(0, kVerticalSidebarLocationBarHeight));
+       location_bar_view_->SetProperty(views::kMarginsKey, gfx::Insets());
+     } else if (is_compact_layout) {
+       location_bar_view_->SetPreferredSize(
+--- a/chrome/browser/ui/views/location_bar/location_bar_view.cc
++++ b/chrome/browser/ui/views/location_bar/location_bar_view.cc
+@@ -101,6 +101,7 @@
+ #include "chrome/browser/ui/views/toolbar/pinned_toolbar_actions_container.h"
+ #include "chrome/browser/ui/views/toolbar/toolbar_view.h"
+ #include "chrome/browser/ui/views/user_education/browser_help_bubble.h"
++#include "chrome/browser/ui/zenium/zenium_layout_state_controller.h"
+ #include "chrome/browser/ui/web_applications/app_browser_controller.h"
+ #include "chrome/browser/ui/webui/cr_components/composebox/composebox_handler.h"
+ #include "chrome/browser/ui/webui/omnibox_popup/omnibox_popup_ui.h"
+@@ -823,12 +824,17 @@
+ 
+   selected_keyword_view_->SetVisible(false);
+ 
++  const auto* layout_controller =
++      browser_ ? ZeniumLayoutStateController::From(browser_) : nullptr;
++  const bool use_vertical_sidebar_spacing =
++      layout_controller && layout_controller->IsVerticalLayout();
++
+   // TODO(manukh): Move constants to layout_constants.cc.
+   // The padding between the left edges of the location bar and the LHS icon,
+   // e.g. the page info icon, the google G icon, the selected suggestion icon.
+-  int icon_left = 2;
++  int icon_left = use_vertical_sidebar_spacing ? 4 : 2;
+   // The padding between the LHS icon and the text.
+-  int text_left = 5;
++  int text_left = use_vertical_sidebar_spacing ? 7 : 5;
+ 
+   // Apply indentation to align the omnibox input icon and the text with those
+   // of the suggestions in the popup. However, there are two exceptions where
+@@ -877,10 +883,16 @@
+   // to position our child views in this case, because other things may be
+   // positioned relative to them (e.g. the "bookmark added" bubble if the user
+   // hits ctrl-d).
+-  const int vertical_padding = GetLayoutConstant(
+-      LayoutConstant::kLocationBarPageInfoIconVerticalPadding);
+-  const int trailing_decorations_edge_padding = GetLayoutConstant(
+-      LayoutConstant::kLocationBarTrailingDecorationEdgePadding);
++  const int vertical_padding =
++      use_vertical_sidebar_spacing
++          ? 4
++          : GetLayoutConstant(
++                LayoutConstant::kLocationBarPageInfoIconVerticalPadding);
++  const int trailing_decorations_edge_padding =
++      use_vertical_sidebar_spacing
++          ? 4
++          : GetLayoutConstant(
++                LayoutConstant::kLocationBarTrailingDecorationEdgePadding);
+ 
+   const int location_height = std::max(height() - (vertical_padding * 2), 0);
+   // The largest fraction of the omnibox that can be taken by the EV or search
+--- a/chrome/browser/ui/views/tabs/tab/tab_close_button.h
++++ b/chrome/browser/ui/views/tabs/tab/tab_close_button.h
+@@ -40,6 +40,9 @@
+   // theme changes.
+   void SetColors(TabStyle::TabColors colors);
+ 
++  // Uses the roomier close-button proportions of the vertical sidebar.
++  void SetZeniumVerticalStyle();
++
+   // views::LabelButton:
+   View* GetTooltipHandlerForPoint(const gfx::Point& point) override;
+   bool OnMousePressed(const ui::MouseEvent& event) override;
+@@ -63,9 +66,12 @@
+   views::View* TargetForRect(views::View* root, const gfx::Rect& rect) override;
+   bool GetHitTestMask(SkPath* mask) const override;
+ 
++  int GetIconSize() const;
++
+   MouseEventCallback mouse_event_callback_;
+ 
+   TabStyle::TabColors colors_;
++  bool use_zenium_vertical_style_ = false;
+ };
+ 
+ #endif  // CHROME_BROWSER_UI_VIEWS_TABS_TAB_TAB_CLOSE_BUTTON_H_
+--- a/chrome/browser/ui/views/tabs/tab/tab_close_button.cc
++++ b/chrome/browser/ui/views/tabs/tab/tab_close_button.cc
+@@ -33,15 +33,9 @@
+ #endif
+ 
+ namespace {
+-gfx::Size GetButtonSize() {
+-  // The close button is larger than the icon inside to provide a larger hit
+-  // target.
+-  constexpr int kButtonPadding = 12;
+-  const int icon_size = GetLayoutConstant(LayoutConstant::kTabCloseButtonSize);
+-  const int button_size = icon_size + kButtonPadding;
+-  return gfx::Size(button_size, button_size);
+-}
+-
++constexpr int kDefaultButtonPadding = 12;
++constexpr int kZeniumVerticalButtonPadding = 14;
++constexpr int kZeniumVerticalIconGrowth = 2;
+ const gfx::Insets kInkDropInsets = gfx::Insets::VH(1, 0);
+ constexpr int kCornerRadius = 4;
+ }  // namespace
+@@ -118,6 +112,15 @@
+   OnPropertyChanged(&colors_, views::PropertyEffects::kPaint);
+ }
+ 
++void TabCloseButton::SetZeniumVerticalStyle() {
++  if (use_zenium_vertical_style_) {
++    return;
++  }
++  use_zenium_vertical_style_ = true;
++  UpdateIcon();
++  PreferredSizeChanged();
++}
++
+ views::View* TabCloseButton::GetTooltipHandlerForPoint(
+     const gfx::Point& point) {
+   // Tab close button has no children, so tooltip handler should be the same
+@@ -171,7 +174,18 @@
+ 
+ gfx::Size TabCloseButton::CalculatePreferredSize(
+     const views::SizeBounds& available_size) const {
+-  return GetButtonSize();
++  // Keep the clickable target larger than the glyph itself. The vertical
++  // sidebar has enough row height for a little more breathing room.
++  const int button_padding = use_zenium_vertical_style_
++                                 ? kZeniumVerticalButtonPadding
++                                 : kDefaultButtonPadding;
++  const int button_size = GetIconSize() + button_padding;
++  return gfx::Size(button_size, button_size);
++}
++
++int TabCloseButton::GetIconSize() const {
++  return GetLayoutConstant(LayoutConstant::kTabCloseButtonSize) +
++         (use_zenium_vertical_style_ ? kZeniumVerticalIconGrowth : 0);
+ }
+ 
+ views::View* TabCloseButton::TargetForRect(views::View* root,
+@@ -215,16 +229,13 @@
+ 
+   SetImageModel(views::Button::STATE_NORMAL,
+                 ui::ImageModel::FromVectorIcon(
+-                    icon, colors_.foreground_color,
+-                    GetLayoutConstant(LayoutConstant::kTabCloseButtonSize)));
++                    icon, colors_.foreground_color, GetIconSize()));
+   SetImageModel(views::Button::STATE_HOVERED,
+                 ui::ImageModel::FromVectorIcon(
+-                    icon, colors_.foreground_color,
+-                    GetLayoutConstant(LayoutConstant::kTabCloseButtonSize)));
++                    icon, colors_.foreground_color, GetIconSize()));
+   SetImageModel(views::Button::STATE_PRESSED,
+                 ui::ImageModel::FromVectorIcon(
+-                    icon, colors_.foreground_color,
+-                    GetLayoutConstant(LayoutConstant::kTabCloseButtonSize)));
++                    icon, colors_.foreground_color, GetIconSize()));
+ }
+ 
+ BEGIN_METADATA(TabCloseButton)
+--- a/chrome/browser/ui/views/tabs/common/tab_view.cc
++++ b/chrome/browser/ui/views/tabs/common/tab_view.cc
+@@ -145,6 +145,8 @@
+                                   this,
+                                   kGlowHoverAnimationDuration)
+                             : nullptr) {
++  close_button_->SetZeniumVerticalStyle();
++
+   tabs::TabInterface* tab = const_cast<tabs::TabInterface*>(GetTabInterface());
+   BrowserWindowInterface* browser_window = tab->GetBrowserWindowInterface();
+   if (browser_window &&

@@ -1,7 +1,9 @@
 # Disables WebRTC log uploading to Google
 
---- a/chrome/browser/media/webrtc/webrtc_log_uploader.cc
-+++ b/chrome/browser/media/webrtc/webrtc_log_uploader.cc
+Index: src/chrome/browser/media/webrtc/webrtc_log_uploader.cc
+===================================================================
+--- src.orig/chrome/browser/media/webrtc/webrtc_log_uploader.cc
++++ src/chrome/browser/media/webrtc/webrtc_log_uploader.cc
 @@ -180,31 +180,13 @@ void WebRtcLogUploader::OnLoggingStopped
    DCHECK(meta_data.get());
    DCHECK(!upload_done_data.paths.directory.empty());
@@ -114,8 +116,10 @@
    main_task_runner_->PostTask(
        FROM_HERE, base::BindOnce(std::move(done_callback), true, ""));
  
---- a/chrome/browser/ui/browser_ui_prefs.cc
-+++ b/chrome/browser/ui/browser_ui_prefs.cc
+Index: src/chrome/browser/ui/browser_ui_prefs.cc
+===================================================================
+--- src.orig/chrome/browser/ui/browser_ui_prefs.cc
++++ src/chrome/browser/ui/browser_ui_prefs.cc
 @@ -158,7 +158,7 @@ void RegisterBrowserUserPrefs(user_prefs
    registry->RegisterStringPref(prefs::kWebRTCUDPPortRange, std::string());
    registry->RegisterBooleanPref(prefs::kWebRtcEventLogCollectionAllowed, false);

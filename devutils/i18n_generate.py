@@ -1,8 +1,8 @@
-# Copyright 2026 The Helium Authors
+# Copyright 2026 The Zenium Authors
 # You can use, redistribute, and/or modify this source code under
 # the terms of the GPL-3.0 license that can be found in the LICENSE file.
 """
-String extraction from Helium patches for translation.
+String extraction from Zenium patches for translation.
 """
 
 import subprocess

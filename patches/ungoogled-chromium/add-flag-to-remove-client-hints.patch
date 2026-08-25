@@ -1,5 +1,7 @@
---- a/chrome/browser/ungoogled_flag_entries.h
-+++ b/chrome/browser/ungoogled_flag_entries.h
+Index: src/chrome/browser/ungoogled_flag_entries.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_entries.h
++++ src/chrome/browser/ungoogled_flag_entries.h
 @@ -116,4 +116,8 @@
       "Reduced System Info",
       "Reduces the amount of system information obatainable through headers and javascript, also causes hardwareConcurrency to respond with two cores. ungoogled-chromium flag.",
@@ -9,8 +11,10 @@
 +     "Removes client hints (information sent to servers about your system, similar to a user agent). ungoogled-chromium flag.",
 +     kOsAll, FEATURE_VALUE_TYPE(blink::features::kRemoveClientHints)},
  #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_ENTRIES_H_
---- a/content/browser/client_hints/client_hints.cc
-+++ b/content/browser/client_hints/client_hints.cc
+Index: src/content/browser/client_hints/client_hints.cc
+===================================================================
+--- src.orig/content/browser/client_hints/client_hints.cc
++++ src/content/browser/client_hints/client_hints.cc
 @@ -823,6 +823,8 @@ void UpdateNavigationRequestClientUaHead
      net::HttpRequestHeaders* headers,
      const std::optional<GURL>& request_url) {
@@ -29,8 +33,10 @@
    ClientHintsExtendedData data(origin, frame_tree_node, delegate);
    UpdateIFramePermissionsPolicyWithDelegationSupportForClientHints(
        data, container_policy);
---- a/third_party/blink/common/features.cc
-+++ b/third_party/blink/common/features.cc
+Index: src/third_party/blink/common/features.cc
+===================================================================
+--- src.orig/third_party/blink/common/features.cc
++++ src/third_party/blink/common/features.cc
 @@ -21,6 +21,7 @@ namespace blink::features {
  
  BASE_FEATURE(kDisableLinkDrag, "DisableLinkDrag", base::FEATURE_DISABLED_BY_DEFAULT);
@@ -39,8 +45,10 @@
  
  // -----------------------------------------------------------------------------
  // Feature definitions and associated constants (feature params, et cetera)
---- a/third_party/blink/public/common/features.h
-+++ b/third_party/blink/public/common/features.h
+Index: src/third_party/blink/public/common/features.h
+===================================================================
+--- src.orig/third_party/blink/public/common/features.h
++++ src/third_party/blink/public/common/features.h
 @@ -22,6 +22,7 @@ namespace features {
  
  BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(kDisableLinkDrag);
@@ -49,8 +57,10 @@
  
  // -----------------------------------------------------------------------------
  // Feature declarations and associated constants (feature params, et cetera)
---- a/third_party/blink/renderer/core/frame/navigator_ua.cc
-+++ b/third_party/blink/renderer/core/frame/navigator_ua.cc
+Index: src/third_party/blink/renderer/core/frame/navigator_ua.cc
+===================================================================
+--- src.orig/third_party/blink/renderer/core/frame/navigator_ua.cc
++++ src/third_party/blink/renderer/core/frame/navigator_ua.cc
 @@ -5,6 +5,7 @@
  #include "third_party/blink/renderer/core/frame/navigator_ua.h"
  
@@ -68,8 +78,10 @@
  
    UserAgentMetadata metadata = GetUserAgentMetadata();
    ua_data->SetBrandVersionList(metadata.brand_version_list);
---- a/third_party/blink/renderer/core/loader/frame_fetch_context.cc
-+++ b/third_party/blink/renderer/core/loader/frame_fetch_context.cc
+Index: src/third_party/blink/renderer/core/loader/frame_fetch_context.cc
+===================================================================
+--- src.orig/third_party/blink/renderer/core/loader/frame_fetch_context.cc
++++ src/third_party/blink/renderer/core/loader/frame_fetch_context.cc
 @@ -57,6 +57,7 @@ BASE_FEATURE(kFastMemoryCacheWithDevTool
  #include "third_party/blink/public/common/associated_interfaces/associated_interface_provider.h"
  #include "third_party/blink/public/common/client_hints/client_hints.h"

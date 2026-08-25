@@ -1,5 +1,7 @@
---- a/chrome/browser/ui/views/frame/browser_widget.cc
-+++ b/chrome/browser/ui/views/frame/browser_widget.cc
+Index: src/chrome/browser/ui/views/frame/browser_widget.cc
+===================================================================
+--- src.orig/chrome/browser/ui/views/frame/browser_widget.cc
++++ src/chrome/browser/ui/views/frame/browser_widget.cc
 @@ -564,5 +564,7 @@ bool BrowserWidget::RegenerateFrameOnThe
  }
  
@@ -8,8 +10,10 @@
 +    return false;
    return browser_view_->browser()->profile()->IsIncognitoProfile();
  }
---- a/chrome/browser/ui/webui/ntp/ntp_resource_cache.cc
-+++ b/chrome/browser/ui/webui/ntp/ntp_resource_cache.cc
+Index: src/chrome/browser/ui/webui/ntp/ntp_resource_cache.cc
+===================================================================
+--- src.orig/chrome/browser/ui/webui/ntp/ntp_resource_cache.cc
++++ src/chrome/browser/ui/webui/ntp/ntp_resource_cache.cc
 @@ -47,6 +47,7 @@
  #include "ui/base/webui/jstemplate_builder.h"
  #include "ui/base/webui/web_ui_util.h"
@@ -29,8 +33,10 @@
    substitutions["colorBackground"] = color_utils::SkColorToRgbaString(
        GetThemeColor(native_theme, cp, kColorNewTabPageBackground));
    substitutions["backgroundPosition"] = GetNewTabBackgroundPositionCSS(tp);
---- a/chrome/browser/ungoogled_flag_entries.h
-+++ b/chrome/browser/ungoogled_flag_entries.h
+Index: src/chrome/browser/ungoogled_flag_entries.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_entries.h
++++ src/chrome/browser/ungoogled_flag_entries.h
 @@ -96,4 +96,8 @@
       "Hide Fullscreen Exit UI",
       "Hides the \"X\" that appears when the mouse cursor is moved towards the top of the window in fullscreen mode. Additionally, this hides the \"Press F11 to exit full screen\" popup. ungoogled-chromium flag.",

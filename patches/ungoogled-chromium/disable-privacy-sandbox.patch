@@ -1,5 +1,7 @@
---- a/chrome/BUILD.gn
-+++ b/chrome/BUILD.gn
+Index: src/chrome/BUILD.gn
+===================================================================
+--- src.orig/chrome/BUILD.gn
++++ src/chrome/BUILD.gn
 @@ -372,7 +372,6 @@ if (!is_android && !is_mac) {
  
      data_deps += [
@@ -16,8 +18,10 @@
      ]
  
      if (!use_static_angle) {
---- a/chrome/browser/resources/BUILD.gn
-+++ b/chrome/browser/resources/BUILD.gn
+Index: src/chrome/browser/resources/BUILD.gn
+===================================================================
+--- src.orig/chrome/browser/resources/BUILD.gn
++++ src/chrome/browser/resources/BUILD.gn
 @@ -132,7 +132,6 @@ group("resources") {
    if (is_mac) {
      public_deps += [
@@ -26,8 +30,10 @@
      ]
    }
  
---- a/components/browsing_data/content/browsing_data_model.cc
-+++ b/components/browsing_data/content/browsing_data_model.cc
+Index: src/components/browsing_data/content/browsing_data_model.cc
+===================================================================
+--- src.orig/components/browsing_data/content/browsing_data_model.cc
++++ src/components/browsing_data/content/browsing_data_model.cc
 @@ -995,12 +995,6 @@ void BrowsingDataModel::PopulateFromDisk
        base::FeatureList::IsEnabled(network::features::kSharedStorageAPI);
    bool is_shared_dictionary_enabled = base::FeatureList::IsEnabled(
@@ -69,8 +75,10 @@
  
  #if BUILDFLAG(ENABLE_LIBRARY_CDMS)
    storage_partition_->GetCdmStorageDataModel()->GetUsagePerAllStorageKeys(
---- a/components/privacy_sandbox/privacy_sandbox_settings_impl.cc
-+++ b/components/privacy_sandbox/privacy_sandbox_settings_impl.cc
+Index: src/components/privacy_sandbox/privacy_sandbox_settings_impl.cc
+===================================================================
+--- src.orig/components/privacy_sandbox/privacy_sandbox_settings_impl.cc
++++ src/components/privacy_sandbox/privacy_sandbox_settings_impl.cc
 @@ -129,7 +129,7 @@ std::set<browsing_topics::Topic> GetTopi
  
  // static
@@ -101,8 +109,10 @@
  }
  
  PrivacySandboxSettingsImpl::Status
---- a/content/browser/attribution_reporting/attribution_suitable_context.cc
-+++ b/content/browser/attribution_reporting/attribution_suitable_context.cc
+Index: src/content/browser/attribution_reporting/attribution_suitable_context.cc
+===================================================================
+--- src.orig/content/browser/attribution_reporting/attribution_suitable_context.cc
++++ src/content/browser/attribution_reporting/attribution_suitable_context.cc
 @@ -44,82 +44,13 @@ bool UkmSourceIdAllowed(RenderFrameHostI
  // static
  std::optional<AttributionSuitableContext> AttributionSuitableContext::Create(
@@ -187,8 +197,10 @@
  }
  
  // static
---- a/content/browser/interest_group/ad_auction_service_impl.cc
-+++ b/content/browser/interest_group/ad_auction_service_impl.cc
+Index: src/content/browser/interest_group/ad_auction_service_impl.cc
+===================================================================
+--- src.orig/content/browser/interest_group/ad_auction_service_impl.cc
++++ src/content/browser/interest_group/ad_auction_service_impl.cc
 @@ -191,11 +191,6 @@ AdAuctionServiceImpl::BiddingAndAuctionD
  void AdAuctionServiceImpl::CreateMojoService(
      RenderFrameHost* render_frame_host,
@@ -201,8 +213,10 @@
  }
  
  void AdAuctionServiceImpl::JoinInterestGroup(
---- a/content/browser/storage_partition_impl.cc
-+++ b/content/browser/storage_partition_impl.cc
+Index: src/content/browser/storage_partition_impl.cc
+===================================================================
+--- src.orig/content/browser/storage_partition_impl.cc
++++ src/content/browser/storage_partition_impl.cc
 @@ -1485,38 +1485,7 @@ void StoragePartitionImpl::Initialize(
  
    bucket_manager_ = std::make_unique<BucketManager>(this);
@@ -263,8 +277,10 @@
  
    if (base::FeatureList::IsEnabled(
            blink::features::kDeclarativePerformanceObserver)) {
---- a/content/browser/web_contents/web_contents_impl.cc
-+++ b/content/browser/web_contents/web_contents_impl.cc
+Index: src/content/browser/web_contents/web_contents_impl.cc
+===================================================================
+--- src.orig/content/browser/web_contents/web_contents_impl.cc
++++ src/content/browser/web_contents/web_contents_impl.cc
 @@ -4370,12 +4370,6 @@ void WebContentsImpl::Init(const WebCont
    DateTimeChooser::CreateDateTimeChooser(this);
  #endif
@@ -278,8 +294,10 @@
  
    SchedulerLoopQuarantineWebContentsObserver::MaybeCreateForWebContents(this);
    RedirectChainDetector::CreateForWebContents(this);
---- a/content/services/auction_worklet/private_aggregation_bindings.cc
-+++ b/content/services/auction_worklet/private_aggregation_bindings.cc
+Index: src/content/services/auction_worklet/private_aggregation_bindings.cc
+===================================================================
+--- src.orig/content/services/auction_worklet/private_aggregation_bindings.cc
++++ src/content/services/auction_worklet/private_aggregation_bindings.cc
 @@ -407,53 +407,6 @@ PrivateAggregationBindings::~PrivateAggr
  
  void PrivateAggregationBindings::AttachToContext(

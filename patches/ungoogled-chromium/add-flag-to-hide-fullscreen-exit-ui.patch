@@ -1,5 +1,7 @@
---- a/chrome/browser/ui/views/frame/browser_view.cc
-+++ b/chrome/browser/ui/views/frame/browser_view.cc
+Index: src/chrome/browser/ui/views/frame/browser_view.cc
+===================================================================
+--- src.orig/chrome/browser/ui/views/frame/browser_view.cc
++++ src/chrome/browser/ui/views/frame/browser_view.cc
 @@ -752,6 +752,9 @@ class BrowserView::ExclusiveAccessContex
    void UpdateExclusiveAccessBubble(
        const ExclusiveAccessBubbleParams& params,
@@ -10,8 +12,10 @@
      // Trusted pinned mode does not allow to escape. So do not show the bubble.
      bool is_trusted_pinned =
          platform_util::IsBrowserLockedFullscreen(browser_view_->browser_.get());
---- a/chrome/browser/ui/views/fullscreen_control/fullscreen_control_host.cc
-+++ b/chrome/browser/ui/views/fullscreen_control/fullscreen_control_host.cc
+Index: src/chrome/browser/ui/views/fullscreen_control/fullscreen_control_host.cc
+===================================================================
+--- src.orig/chrome/browser/ui/views/fullscreen_control/fullscreen_control_host.cc
++++ src/chrome/browser/ui/views/fullscreen_control/fullscreen_control_host.cc
 @@ -77,6 +77,10 @@ bool IsExitUiEnabled() {
    // menu and controls reveal when the cursor is moved to the top.
    return false;
@@ -23,8 +27,10 @@
    // Kiosk mode is a fullscreen experience, which makes the exit UI
    // inappropriate.
    return !IsRunningInAppMode();
---- a/chrome/browser/ungoogled_flag_entries.h
-+++ b/chrome/browser/ungoogled_flag_entries.h
+Index: src/chrome/browser/ungoogled_flag_entries.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_entries.h
++++ src/chrome/browser/ungoogled_flag_entries.h
 @@ -92,4 +92,8 @@
       "Hide Extensions Menu",
       "Hides the extensions container. This includes the puzzle piece icon as well as any pinned extensions. ungoogled-chromium flag.",

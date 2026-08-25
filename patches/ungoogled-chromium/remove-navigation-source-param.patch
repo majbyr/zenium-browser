@@ -1,7 +1,9 @@
 # This removes a tracking parameter that is injected into the URL
 # when navigating from the onmibox/realbox
---- a/components/search_engines/template_url.cc
-+++ b/components/search_engines/template_url.cc
+Index: src/components/search_engines/template_url.cc
+===================================================================
+--- src.orig/components/search_engines/template_url.cc
++++ src/components/search_engines/template_url.cc
 @@ -1413,23 +1413,6 @@ std::string TemplateURLRef::HandleReplac
          break;
  

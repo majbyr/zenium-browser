@@ -1,5 +1,7 @@
---- a/chrome/browser/ui/views/tabs/tab.cc
-+++ b/chrome/browser/ui/views/tabs/tab.cc
+Index: src/chrome/browser/ui/views/tabs/tab.cc
+===================================================================
+--- src.orig/chrome/browser/ui/views/tabs/tab.cc
++++ src/chrome/browser/ui/views/tabs/tab.cc
 @@ -12,6 +12,7 @@
  #include <string_view>
  #include <utility>
@@ -22,8 +24,10 @@
  // This function updates the accessible name for the tab whenever any of the
  // parameters that influence the accessible name change. It ultimately calls
  // BrowserView::GetAccessibleTabLabel to get the updated accessible name.
---- a/chrome/browser/ui/views/tabs/tab.h
-+++ b/chrome/browser/ui/views/tabs/tab.h
+Index: src/chrome/browser/ui/views/tabs/tab.h
+===================================================================
+--- src.orig/chrome/browser/ui/views/tabs/tab.h
++++ src/chrome/browser/ui/views/tabs/tab.h
 @@ -107,6 +107,7 @@ class Tab : public gfx::AnimationDelegat
    void OnMouseEntered(const ui::MouseEvent& event) override;
    void OnMouseExited(const ui::MouseEvent& event) override;
@@ -32,8 +36,10 @@
    gfx::Size CalculatePreferredSize(
        const views::SizeBounds& available_size) const override;
    void PaintChildren(const views::PaintInfo& info) override;
---- a/chrome/browser/ui/views/tabs/tab_strip.cc
-+++ b/chrome/browser/ui/views/tabs/tab_strip.cc
+Index: src/chrome/browser/ui/views/tabs/tab_strip.cc
+===================================================================
+--- src.orig/chrome/browser/ui/views/tabs/tab_strip.cc
++++ src/chrome/browser/ui/views/tabs/tab_strip.cc
 @@ -15,6 +15,7 @@
  #include <utility>
  #include <vector>
@@ -51,8 +57,10 @@
    if (tab_container_) {
      tab_container_->UpdateHoverCard(anchor_target, update_type);
    }
---- a/chrome/browser/ungoogled_flag_choices.h
-+++ b/chrome/browser/ungoogled_flag_choices.h
+Index: src/chrome/browser/ungoogled_flag_choices.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_choices.h
++++ src/chrome/browser/ungoogled_flag_choices.h
 @@ -70,4 +70,13 @@ const FeatureEntry::Choice kCloseConfirm
       "close-confirmation",
       "multiple"},
@@ -67,8 +75,10 @@
 +     "tooltip"},
 +};
  #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_CHOICES_H_
---- a/chrome/browser/ungoogled_flag_entries.h
-+++ b/chrome/browser/ungoogled_flag_entries.h
+Index: src/chrome/browser/ungoogled_flag_entries.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_entries.h
++++ src/chrome/browser/ungoogled_flag_entries.h
 @@ -68,4 +68,8 @@
       "Custom New Tab Page",
       "Allows setting a custom URL for the new tab page. Value can be internal (e.g. `about:blank` or `chrome://new-tab-page`), external (e.g. `example.com`), or local (e.g. `file:///tmp/startpage.html`). This applies for incognito windows as well when not set to a `chrome://` internal page. ungoogled-chromium flag",

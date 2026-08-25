@@ -1,5 +1,7 @@
---- a/chrome/browser/ungoogled_flag_entries.h
-+++ b/chrome/browser/ungoogled_flag_entries.h
+Index: src/chrome/browser/ungoogled_flag_entries.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_entries.h
++++ src/chrome/browser/ungoogled_flag_entries.h
 @@ -112,4 +112,8 @@
       "Minimal Referrers",
       "Removes all cross-origin referrers and strips same-origin referrers down to the origin. Has lower precedence than remove-cross-origin-referrers. ungoogled-chromium flag.",
@@ -9,8 +11,10 @@
 +     "Reduces the amount of system information obatainable through headers and javascript, also causes hardwareConcurrency to respond with two cores. ungoogled-chromium flag.",
 +     kOsAll, FEATURE_VALUE_TYPE(blink::features::kReducedSystemInfo)},
  #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_ENTRIES_H_
---- a/components/embedder_support/user_agent_utils.cc
-+++ b/components/embedder_support/user_agent_utils.cc
+Index: src/components/embedder_support/user_agent_utils.cc
+===================================================================
+--- src.orig/components/embedder_support/user_agent_utils.cc
++++ src/components/embedder_support/user_agent_utils.cc
 @@ -195,6 +195,8 @@ const blink::UserAgentBrandList GetUserA
  // It helps us avoid introducing individual enterprise policy controls for
  // sending unified platform for the user agent string.
@@ -29,8 +33,10 @@
    blink::UserAgentMetadata metadata;
  
    // Low entropy client hints.
---- a/third_party/blink/common/features.cc
-+++ b/third_party/blink/common/features.cc
+Index: src/third_party/blink/common/features.cc
+===================================================================
+--- src.orig/third_party/blink/common/features.cc
++++ src/third_party/blink/common/features.cc
 @@ -20,6 +20,7 @@
  namespace blink::features {
  
@@ -39,8 +45,10 @@
  
  // -----------------------------------------------------------------------------
  // Feature definitions and associated constants (feature params, et cetera)
---- a/third_party/blink/public/common/features.h
-+++ b/third_party/blink/public/common/features.h
+Index: src/third_party/blink/public/common/features.h
+===================================================================
+--- src.orig/third_party/blink/public/common/features.h
++++ src/third_party/blink/public/common/features.h
 @@ -21,6 +21,7 @@ namespace blink {
  namespace features {
  
@@ -49,8 +57,10 @@
  
  // -----------------------------------------------------------------------------
  // Feature declarations and associated constants (feature params, et cetera)
---- a/third_party/blink/renderer/core/execution_context/navigator_base.cc
-+++ b/third_party/blink/renderer/core/execution_context/navigator_base.cc
+Index: src/third_party/blink/renderer/core/execution_context/navigator_base.cc
+===================================================================
+--- src.orig/third_party/blink/renderer/core/execution_context/navigator_base.cc
++++ src/third_party/blink/renderer/core/execution_context/navigator_base.cc
 @@ -70,6 +70,8 @@ void NavigatorBase::Trace(Visitor* visit
  }
  

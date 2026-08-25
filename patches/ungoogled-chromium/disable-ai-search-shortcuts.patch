@@ -1,5 +1,7 @@
---- a/components/omnibox/browser/featured_search_provider.cc
-+++ b/components/omnibox/browser/featured_search_provider.cc
+Index: src/components/omnibox/browser/featured_search_provider.cc
+===================================================================
+--- src.orig/components/omnibox/browser/featured_search_provider.cc
++++ src/components/omnibox/browser/featured_search_provider.cc
 @@ -300,23 +300,10 @@ void FeaturedSearchProvider::AddFeatured
      if (turl->starter_pack_id() !=
              template_url_starter_pack_data::StarterPackId::kNone &&
@@ -28,8 +30,10 @@
          continue;
        }
        // The history starter pack engine is disabled in incognito mode.
---- a/components/search_engines/ui_utils.cc
-+++ b/components/search_engines/ui_utils.cc
+Index: src/components/search_engines/ui_utils.cc
+===================================================================
+--- src.orig/components/search_engines/ui_utils.cc
++++ src/components/search_engines/ui_utils.cc
 @@ -183,23 +183,14 @@ template_url_starter_pack_data::StarterP
      bool gemini_enabled) {
    template_url_starter_pack_data::StarterPackIdSet disabled_starter_pack_ids;

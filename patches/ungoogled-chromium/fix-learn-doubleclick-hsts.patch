@@ -1,7 +1,9 @@
 # Split up the learn.doubleclick.net string literal to prevent domain substitution breaking compilation due to the use of the excluded HSTS list json file in this code.
 
---- a/net/tools/transport_security_state_generator/transport_security_state_generator.cc
-+++ b/net/tools/transport_security_state_generator/transport_security_state_generator.cc
+Index: src/net/tools/transport_security_state_generator/transport_security_state_generator.cc
+===================================================================
+--- src.orig/net/tools/transport_security_state_generator/transport_security_state_generator.cc
++++ src/net/tools/transport_security_state_generator/transport_security_state_generator.cc
 @@ -145,7 +145,7 @@ bool CheckDuplicatePinEntries(const PinE
  bool CheckNoopEntries(const TransportSecurityStateEntries& entries) {
    for (const auto& entry : entries) {

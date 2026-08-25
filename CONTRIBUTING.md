@@ -1,12 +1,12 @@
-# Contributing to Helium
+# Contributing to Zenium
 
-This repository contains Helium's shared Chromium patches, resources, and
+This repository contains Zenium's shared Chromium patches, resources, and
 development tooling. Platform-specific packaging and build environments live in
 the platform repositories:
 
-- [Helium for macOS](https://github.com/imputnet/helium-macos)
-- [Helium for Linux](https://github.com/imputnet/helium-linux)
-- [Helium for Windows](https://github.com/imputnet/helium-windows)
+- [Zenium for macOS](https://github.com/imputnet/helium-macos)
+- [Zenium for Linux](https://github.com/imputnet/helium-linux)
+- [Zenium for Windows](https://github.com/imputnet/helium-windows)
 
 The same contribution guidelines apply to all platform repos.
 
@@ -69,12 +69,12 @@ When working in a platform repository, the usual workflow is:
 ## Code style
 
 - Follow Chromium style and conventions.
-- Prefer existing Chromium or Helium patterns over introducing new abstractions.
+- Prefer existing Chromium or Zenium patterns over introducing new abstractions.
 - Keep changes focused and minimal.
 - Proofread surrounding code before submitting.
-- When adding new Helium-authored files to the Chromium tree, include the Helium
+- When adding new Zenium-authored files to the Chromium tree, include the Zenium
   copyright header used in other patches.
-- Refer to existing Helium patches for guidance if necessary.
+- Refer to existing Zenium patches for guidance if necessary.
 
 ## Git style
 
@@ -87,11 +87,11 @@ obviously.
 Examples of titles from recent history as of writing:
 
 ```
-- helium/ui/layout: add a ⌘+S shortcut to toggle vertical tabs
-- helium/ui/pdf-viewer: fix stuck width when sidebar's collapsed
+- zenium/ui/layout: add a ⌘+S shortcut to toggle vertical tabs
+- zenium/ui/pdf-viewer: fix stuck width when sidebar's collapsed
 - deps: update ublock to 1.70.0
 - merge: update to chromium 146.0.7680.75
-- helium/core/keyboard-shortcuts: update command state correctly
+- zenium/core/keyboard-shortcuts: update command state correctly
 ```
 
 The part before the colon should describe the area being changed (scope),
@@ -112,7 +112,7 @@ in most places (such as GitHub). For example, this final commit title is
 exactly 72 characters long:
 
 ```
-helium/ui/customize: add change wallpaper button, fix visibility (#1053)
+zenium/ui/customize: add change wallpaper button, fix visibility (#1053)
 ```
 
 If a multi-commit pull request contains uninformative or malformed commit
@@ -154,7 +154,7 @@ changes into several follow-up PRs if necessary.
 
 ## Licensing
 
-By contributing to Helium, you agree that your changes will be licensed under
+By contributing to Zenium, you agree that your changes will be licensed under
 the repository's existing licensing terms.
 
 <!-- Long referenced links -->

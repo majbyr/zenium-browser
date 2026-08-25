@@ -1,0 +1,55 @@
+Index: src/chrome/app/theme/chromium/BRANDING
+===================================================================
+--- src.orig/chrome/app/theme/chromium/BRANDING
++++ src/chrome/app/theme/chromium/BRANDING
+@@ -1,10 +1,10 @@
+-COMPANY_FULLNAME=The Chromium Authors
+-COMPANY_SHORTNAME=The Chromium Authors
+-PRODUCT_FULLNAME=Chromium
+-PRODUCT_SHORTNAME=Chromium
+-PRODUCT_INSTALLER_FULLNAME=Chromium Installer
+-PRODUCT_INSTALLER_SHORTNAME=Chromium Installer
+-COPYRIGHT=Copyright @LASTCHANGE_YEAR@ The Chromium Authors. All rights reserved.
+-MAC_BUNDLE_ID=org.chromium.Chromium
++COMPANY_FULLNAME=The Zenium Authors
++COMPANY_SHORTNAME=The Zenium Authors
++PRODUCT_FULLNAME=Zenium
++PRODUCT_SHORTNAME=Zenium
++PRODUCT_INSTALLER_FULLNAME=Zenium Installer
++PRODUCT_INSTALLER_SHORTNAME=Zenium Installer
++COPYRIGHT=Copyright @LASTCHANGE_YEAR@ The Zenium Authors. All rights reserved.
++MAC_BUNDLE_ID=net.zenium
+ MAC_CREATOR_CODE=Cr24
+-MAC_TEAM_ID=
++MAC_TEAM_ID=S4Q33XPHB4
+Index: src/chrome/app/chrome_crash_reporter_client.cc
+===================================================================
+--- src.orig/chrome/app/chrome_crash_reporter_client.cc
++++ src/chrome/app/chrome_crash_reporter_client.cc
+@@ -129,25 +129,7 @@ bool ChromeCrashReporterClient::GetCrash
+ 
+ void ChromeCrashReporterClient::GetProductInfo(ProductInfo* product_info) {
+   CHECK(product_info);
+-
+-#if BUILDFLAG(IS_ANDROID)
+-  product_info->product_name = "Chrome_Android";
+-#elif BUILDFLAG(IS_CHROMEOS)
+-  product_info->product_name = "Chrome_ChromeOS";
+-#elif BUILDFLAG(IS_LINUX)
+-#if defined(ADDRESS_SANITIZER)
+-  product_info->product_name = "Chrome_Linux_ASan";
+-#else
+-  product_info->product_name = "Chrome_Linux";
+-#endif  // defined(ADDRESS_SANITIZER)
+-#elif BUILDFLAG(IS_MAC)
+-  product_info->product_name = "Chrome_Mac";
+-#elif BUILDFLAG(IS_WIN)
+-  product_info->product_name = "Chrome";
+-#else
+-  NOTREACHED();
+-#endif
+-
++  product_info->product_name = "Zenium";
+   product_info->version = UpdaterVersion();
+   product_info->channel =
+       chrome::GetChannelName(chrome::WithExtendedStable(true));

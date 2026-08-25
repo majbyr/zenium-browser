@@ -1,7 +1,9 @@
 # Make popups go to tabs instead
 
---- a/chrome/browser/ungoogled_flag_entries.h
-+++ b/chrome/browser/ungoogled_flag_entries.h
+Index: src/chrome/browser/ungoogled_flag_entries.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_entries.h
++++ src/chrome/browser/ungoogled_flag_entries.h
 @@ -48,4 +48,8 @@
       "Close window with last tab",
       "Determines whether a window should close once the last tab is closed. ungoogled-chromium flag.",
@@ -11,8 +13,10 @@
 +     "Makes popups open in new tabs. ungoogled-chromium flag",
 +     kOsAll, SINGLE_VALUE_TYPE("popups-to-tabs")},
  #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_ENTRIES_H_
---- a/content/renderer/render_frame_impl.cc
-+++ b/content/renderer/render_frame_impl.cc
+Index: src/content/renderer/render_frame_impl.cc
+===================================================================
+--- src.orig/content/renderer/render_frame_impl.cc
++++ src/content/renderer/render_frame_impl.cc
 @@ -1279,6 +1279,8 @@ WindowOpenDisposition NavigationPolicyTo
      case blink::kWebNavigationPolicyNewWindow:
        return WindowOpenDisposition::NEW_WINDOW;
@@ -22,8 +26,10 @@
        return WindowOpenDisposition::NEW_POPUP;
      case blink::kWebNavigationPolicyPictureInPicture:
        return WindowOpenDisposition::NEW_PICTURE_IN_PICTURE;
---- a/ui/base/mojom/window_open_disposition_mojom_traits.h
-+++ b/ui/base/mojom/window_open_disposition_mojom_traits.h
+Index: src/ui/base/mojom/window_open_disposition_mojom_traits.h
+===================================================================
+--- src.orig/ui/base/mojom/window_open_disposition_mojom_traits.h
++++ src/ui/base/mojom/window_open_disposition_mojom_traits.h
 @@ -5,6 +5,7 @@
  #ifndef UI_BASE_MOJOM_WINDOW_OPEN_DISPOSITION_MOJOM_TRAITS_H_
  #define UI_BASE_MOJOM_WINDOW_OPEN_DISPOSITION_MOJOM_TRAITS_H_

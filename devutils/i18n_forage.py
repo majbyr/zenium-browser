@@ -1,4 +1,4 @@
-# Copyright 2026 The Helium Authors
+# Copyright 2026 The Zenium Authors
 # You can use, redistribute, and/or modify this source code under
 # the terms of the GPL-3.0 license that can be found in the LICENSE file.
 """Helper for finding existing translated strings in upstream Chromium."""
@@ -57,7 +57,7 @@ def stringify_inner_xml(node):
 
 
 def find_matching(path, fpmap):
-    """Finds pre-existing matching translations for Helium strings."""
+    """Finds pre-existing matching translations for Zenium strings."""
     content = path.read_text(encoding='utf-8')
     root = xml.fromstring(content)
 
@@ -71,7 +71,7 @@ def find_matching(path, fpmap):
 
 def apply_matching(lang, matching, fpmap):
     """
-    Takes a map of found matches and applies them to the helium i18n file.
+    Takes a map of found matches and applies them to the zenium i18n file.
     """
     translation_path = TRANSLATIONS_DIR / f'{lang}.json'
     translations = []

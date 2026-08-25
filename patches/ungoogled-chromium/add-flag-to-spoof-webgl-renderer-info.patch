@@ -1,8 +1,10 @@
 # Return generic values for WebGLDebugRendererInfo to remove a potential data
 # leak while preventing potential website breakage
 
---- a/chrome/browser/ungoogled_flag_choices.h
-+++ b/chrome/browser/ungoogled_flag_choices.h
+Index: src/chrome/browser/ungoogled_flag_choices.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_choices.h
++++ src/chrome/browser/ungoogled_flag_choices.h
 @@ -79,4 +79,41 @@ const FeatureEntry::Choice kTabHoverCard
       "tab-hover-cards",
       "tooltip"},
@@ -45,8 +47,10 @@
 +    {"Qualcomm Adreno 610", kSpoofWebGL_Qualcomm, nullptr},
 +};
  #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_CHOICES_H_
---- a/chrome/browser/ungoogled_flag_entries.h
-+++ b/chrome/browser/ungoogled_flag_entries.h
+Index: src/chrome/browser/ungoogled_flag_entries.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_entries.h
++++ src/chrome/browser/ungoogled_flag_entries.h
 @@ -124,4 +124,8 @@
       "Enforce Certificate Transparency",
       "Enforce Certificate Transparency for certificates that sites present. This is enabled by default. ungoogled-chromium flag.",
@@ -56,8 +60,10 @@
 +     "Return generic values for WebGLDebugRendererInfo to remove a potential data leak while preventing potential website breakage. ungoogled-chromium flag.",
 +     kOsAll, FEATURE_WITH_PARAMS_VALUE_TYPE(blink::features::kSpoofWebGLInfo, kSpoofWebGLChoices, "SpoofWebGLInfo")},
  #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_ENTRIES_H_
---- a/third_party/blink/common/features.cc
-+++ b/third_party/blink/common/features.cc
+Index: src/third_party/blink/common/features.cc
+===================================================================
+--- src.orig/third_party/blink/common/features.cc
++++ src/third_party/blink/common/features.cc
 @@ -22,6 +22,11 @@ namespace blink::features {
  BASE_FEATURE(kDisableLinkDrag, "DisableLinkDrag", base::FEATURE_DISABLED_BY_DEFAULT);
  BASE_FEATURE(kReducedSystemInfo, "ReducedSystemInfo", base::FEATURE_DISABLED_BY_DEFAULT);
@@ -70,8 +76,10 @@
  
  // -----------------------------------------------------------------------------
  // Feature definitions and associated constants (feature params, et cetera)
---- a/third_party/blink/public/common/features.h
-+++ b/third_party/blink/public/common/features.h
+Index: src/third_party/blink/public/common/features.h
+===================================================================
+--- src.orig/third_party/blink/public/common/features.h
++++ src/third_party/blink/public/common/features.h
 @@ -23,6 +23,11 @@ namespace features {
  BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(kDisableLinkDrag);
  BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(kReducedSystemInfo);
@@ -84,8 +92,10 @@
  
  // -----------------------------------------------------------------------------
  // Feature declarations and associated constants (feature params, et cetera)
---- a/third_party/blink/renderer/modules/webgl/webgl_rendering_context_base.cc
-+++ b/third_party/blink/renderer/modules/webgl/webgl_rendering_context_base.cc
+Index: src/third_party/blink/renderer/modules/webgl/webgl_rendering_context_base.cc
+===================================================================
+--- src.orig/third_party/blink/renderer/modules/webgl/webgl_rendering_context_base.cc
++++ src/third_party/blink/renderer/modules/webgl/webgl_rendering_context_base.cc
 @@ -4191,6 +4191,8 @@ ScriptValue WebGLRenderingContextBase::g
        return ScriptValue::CreateNull(script_state->GetIsolate());
      case WebGLDebugRendererInfo::kUnmaskedRendererWebgl:

@@ -1,7 +1,9 @@
 # Disables references to fonts.googleapis.com
 
---- a/components/dom_distiller/content/browser/dom_distiller_viewer_source.cc
-+++ b/components/dom_distiller/content/browser/dom_distiller_viewer_source.cc
+Index: src/components/dom_distiller/content/browser/dom_distiller_viewer_source.cc
+===================================================================
+--- src.orig/components/dom_distiller/content/browser/dom_distiller_viewer_source.cc
++++ src/components/dom_distiller/content/browser/dom_distiller_viewer_source.cc
 @@ -308,7 +308,7 @@ bool DomDistillerViewerSource::ShouldSer
  std::string DomDistillerViewerSource::GetContentSecurityPolicy(
      network::mojom::CSPDirectiveName directive) {
@@ -11,8 +13,10 @@
    } else if (directive == network::mojom::CSPDirectiveName::ChildSrc) {
      return "child-src *;";
    } else if (directive ==
---- a/components/dom_distiller/core/html/preview.html
-+++ b/components/dom_distiller/core/html/preview.html
+Index: src/components/dom_distiller/core/html/preview.html
+===================================================================
+--- src.orig/components/dom_distiller/core/html/preview.html
++++ src/components/dom_distiller/core/html/preview.html
 @@ -11,7 +11,7 @@ found in the LICENSE file.
    <meta name="theme-color" id="theme-color">
    <title>Title goes here and it could be kind of lengthy - Publisher name</title>
@@ -22,8 +26,10 @@
    <style>
      .english :lang(th) {display: none}
      .english :lang(zh) {display: none}
---- a/third_party/crashpad/crashpad/doc/support/crashpad_doxygen.css
-+++ b/third_party/crashpad/crashpad/doc/support/crashpad_doxygen.css
+Index: src/third_party/crashpad/crashpad/doc/support/crashpad_doxygen.css
+===================================================================
+--- src.orig/third_party/crashpad/crashpad/doc/support/crashpad_doxygen.css
++++ src/third_party/crashpad/crashpad/doc/support/crashpad_doxygen.css
 @@ -12,11 +12,11 @@
   * See the License for the specific language governing permissions and
   * limitations under the License. */
@@ -38,8 +44,10 @@
      'Lucida Grande',
      'Lucida Sans Unicode',
      Helvetica,
---- a/tools/md_browser/base.css
-+++ b/tools/md_browser/base.css
+Index: src/tools/md_browser/base.css
+===================================================================
+--- src.orig/tools/md_browser/base.css
++++ src/tools/md_browser/base.css
 @@ -16,8 +16,7 @@
  
  /* Common styles and definitions. */

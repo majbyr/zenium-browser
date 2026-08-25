@@ -1,0 +1,40 @@
+--- a/chrome/browser/ui/layout_constants.cc
++++ b/chrome/browser/ui/layout_constants.cc
+@@ -147,11 +147,11 @@
+     case LayoutConstant::kVerticalTabCornerRadius:
+       return 8;
+     case LayoutConstant::kVerticalTabHeight:
+-      return 30;
++      return 40;
+     case LayoutConstant::kVerticalTabPinnedHeight:
+-      return 30;
++      return 40;
+     case LayoutConstant::kVerticalTabMinWidth:
+-      return 30;
++      return 40;
+     case LayoutConstant::kVerticalTabStripHorizontalPadding:
+       return 6;
+     case LayoutConstant::kVerticalTabStripUncollapsedVerticalPadding:
+--- a/chrome/browser/ui/views/tabs/common/unpinned_tab_container_view.cc
++++ b/chrome/browser/ui/views/tabs/common/unpinned_tab_container_view.cc
+@@ -26,7 +26,7 @@
+ #include "ui/views/view_utils.h"
+ 
+ namespace {
+-constexpr int kTabVerticalPadding = 2;
++constexpr int kTabVerticalPadding = 5;
+ 
+ // The following are percentages used to determine the amount that dragged
+ // tabs must be peeking into/out of a tab group view in order for the handling
+--- a/chrome/browser/ui/views/tabs/common/pinned_tab_container_view.cc
++++ b/chrome/browser/ui/views/tabs/common/pinned_tab_container_view.cc
+@@ -25,7 +25,7 @@
+ #include "ui/views/view_utils.h"
+ 
+ namespace {
+-constexpr int kTabPadding = 4;
++constexpr int kTabPadding = 5;
+ }  // namespace
+ 
+ PinnedTabContainerView::PinnedTabContainerView(
+

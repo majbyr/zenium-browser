@@ -1,5 +1,7 @@
---- a/chrome/browser/ui/tabs/tab_strip_model.cc
-+++ b/chrome/browser/ui/tabs/tab_strip_model.cc
+Index: src/chrome/browser/ui/tabs/tab_strip_model.cc
+===================================================================
+--- src.orig/chrome/browser/ui/tabs/tab_strip_model.cc
++++ src/chrome/browser/ui/tabs/tab_strip_model.cc
 @@ -18,6 +18,7 @@
  
  #include "base/check.h"
@@ -34,8 +36,10 @@
  
    CreateHistoricalSplitIfClosing(tabs_to_close, close_types);
  
---- a/chrome/browser/ungoogled_flag_choices.h
-+++ b/chrome/browser/ungoogled_flag_choices.h
+Index: src/chrome/browser/ungoogled_flag_choices.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_choices.h
++++ src/chrome/browser/ungoogled_flag_choices.h
 @@ -55,4 +55,10 @@ const FeatureEntry::Choice kOmniboxAutoc
       "omnibox-autocomplete-filtering",
       "search-bookmarks-chrome"},
@@ -47,8 +51,10 @@
 +     "never"},
 +};
  #endif  // CHROME_BROWSER_UNGOOGLED_FLAG_CHOICES_H_
---- a/chrome/browser/ungoogled_flag_entries.h
-+++ b/chrome/browser/ungoogled_flag_entries.h
+Index: src/chrome/browser/ungoogled_flag_entries.h
+===================================================================
+--- src.orig/chrome/browser/ungoogled_flag_entries.h
++++ src/chrome/browser/ungoogled_flag_entries.h
 @@ -44,4 +44,8 @@
       "Omnibox Autocomplete Filtering",
       "Restrict omnibox autocomplete results to a combination of search suggestions (if enabled), bookmarks, and internal chrome pages. ungoogled-chromium flag.",

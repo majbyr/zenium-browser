@@ -1,5 +1,7 @@
---- a/components/autofill/core/browser/crowdsourcing/autofill_crowdsourcing_manager.cc
-+++ b/components/autofill/core/browser/crowdsourcing/autofill_crowdsourcing_manager.cc
+Index: src/components/autofill/core/browser/crowdsourcing/autofill_crowdsourcing_manager.cc
+===================================================================
+--- src.orig/components/autofill/core/browser/crowdsourcing/autofill_crowdsourcing_manager.cc
++++ src/components/autofill/core/browser/crowdsourcing/autofill_crowdsourcing_manager.cc
 @@ -933,94 +933,6 @@ std::tuple<GURL, std::string> AutofillCr
  }
  
