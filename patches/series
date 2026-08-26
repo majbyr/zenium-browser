@@ -348,6 +348,7 @@ zenium/ui/layout/sidebar-new-tab-consistency.patch
 zenium/ui/layout/sidebar-new-tab-production.patch
 zenium/ui/layout/sidebar-new-tab-widget-stability.patch
 zenium/ui/layout/sidebar-omnibox-focus-ownership.patch
+zenium/ui/layout/sidebar-omnibox-lifecycle.patch
 
 zenium/ui/generate-standard-qr-codes.patch
 zenium/ui/pdf-viewer.patch
