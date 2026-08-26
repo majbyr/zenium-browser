@@ -1,0 +1,364 @@
+diff --git a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts
+index 4c1c0ef5bc02d4b242860eca1859dec31f4ca7c5..57e938cd828929ec25255909d2d9ce9048e43d50 100644
+--- a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts
++++ b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts
+@@ -146,6 +146,9 @@ export class OmniboxPopupSearchboxElement extends
+   private pendingFocusSelection_: {start: number, end: number}|null = null;
+   // Invalidates focus work queued across WebUI state or visibility changes.
+   private focusRequestGeneration_: number = 0;
++  // Invalidates a deferred cross-widget blur dismissal when native address-bar
++  // focus reopens the retained popup during the same pointer dispatch.
++  private focusoutCloseGeneration_: number = 0;
+   // Distinguishes an internal surface click from a genuine focus transfer out
+   // of the separately hosted popup Widget.
+   private pointerDownWithinSearchbox_: boolean = false;
+@@ -430,21 +433,16 @@ export class OmniboxPopupSearchboxElement extends
+       this.dropdownIsVisible = false;
+     }
+ 
+-    const wasAlreadyFocused =
+-        this.shadowRoot?.activeElement === this.$.input;
+     let applySelectionImmediately = true;
+     if (state.isFocused) {
+       if (document.visibilityState === 'visible') {
+         this.deferredFocusAction_ = null;
+-        if (wasAlreadyFocused) {
+-          this.cancelScheduledFocus_();
+-        } else {
+-          // Text assignment and popup activation both invalidate layout. Wait
+-          // for Lit and one animation frame before moving DOM focus/selection;
+-          // doing this synchronously can reach Blink with a dirty flat tree.
+-          this.scheduleFocus_(state.selection);
+-          applySelectionImmediately = false;
+-        }
++        // Text assignment and popup activation both invalidate layout. Always
++        // schedule selection, including when the retained input is already
++        // focused: mode changes can resize/reparent its native surface without
++        // producing a new DOM focus edge.
++        this.scheduleFocus_(state.selection);
++        applySelectionImmediately = false;
+       } else {
+         this.cancelScheduledFocus_();
+         this.deferredFocusAction_ = DeferredFocusAction.FOCUS;
+@@ -488,12 +486,7 @@ export class OmniboxPopupSearchboxElement extends
+         this.deferredFocusAction_ = null;
+         const input = this.getInputElement().inputElement;
+         const selection = {start: 0, end: input.value.length};
+-        if (this.shadowRoot?.activeElement === this.$.input) {
+-          this.cancelScheduledFocus_();
+-          this.selectRange(selection);
+-        } else {
+-          this.scheduleFocus_(selection);
+-        }
++        this.scheduleFocus_(selection);
+       } else {
+         // Defer focusing and selecting text if the document is currently
+         // hidden, as DOM focus calls on hidden documents may be ignored.
+@@ -512,6 +505,7 @@ export class OmniboxPopupSearchboxElement extends
+   }
+ 
+   private scheduleFocus_(selection: {start: number, end: number}) {
++    ++this.focusoutCloseGeneration_;
+     const generation = ++this.focusRequestGeneration_;
+     const pendingSelection = {...selection};
+     this.pendingFocusSelection_ = pendingSelection;
+@@ -521,16 +515,26 @@ export class OmniboxPopupSearchboxElement extends
+             document.visibilityState !== 'visible') {
+           return;
+         }
+-        const wasAlreadyFocused =
+-            this.shadowRoot?.activeElement === this.$.input;
++        // A retained top-chrome WebContents can be resized and moved between
++        // the corner editor and centered palette in the same frame. Flush its
++        // flat-tree layout before changing focus; otherwise Blink selection
++        // invalidation can run against a dirty tree and leave the input inert.
++        this.getInputElement().inputElement.getBoundingClientRect();
+         this.$.input.focus();
+-        if (wasAlreadyFocused) {
+-          // No focusin event will run to consume the pending selection.
++
++        // Focus activation can itself invalidate style. Apply the requested
++        // selection on the following frame, after that invalidation settles.
++        requestAnimationFrame(() => {
++          if (generation !== this.focusRequestGeneration_ ||
++              document.visibilityState !== 'visible') {
++            return;
++          }
++          this.getInputElement().inputElement.getBoundingClientRect();
+           this.selectRange(pendingSelection);
+           if (this.pendingFocusSelection_ === pendingSelection) {
+             this.pendingFocusSelection_ = null;
+           }
+-        }
++        });
+       });
+     });
+   }
+@@ -569,18 +573,8 @@ export class OmniboxPopupSearchboxElement extends
+   }
+ 
+   protected onInputFocusin_() {
++    ++this.focusoutCloseGeneration_;
+     this.searchboxPageHandler_.onFocusChanged(true);
+-    if (this.pendingFocusSelection_) {
+-      const appliedSelection = this.pendingFocusSelection_;
+-      this.selectRange(appliedSelection);
+-      // Delay clearing pending focus as tab switch sets `pendingFocusSelection`
+-      // after `focusin` is called.
+-      requestAnimationFrame(() => {
+-        if (this.pendingFocusSelection_ === appliedSelection) {
+-          this.pendingFocusSelection_ = null;
+-        }
+-      });
+-    }
+   }
+ 
+   /**
+@@ -623,6 +617,7 @@ export class OmniboxPopupSearchboxElement extends
+   }
+ 
+   protected onInputWrapperPointerdown_() {
++    ++this.focusoutCloseGeneration_;
+     this.pointerDownWithinSearchbox_ = true;
+     requestAnimationFrame(() => {
+       this.pointerDownWithinSearchbox_ = false;
+@@ -648,13 +643,26 @@ export class OmniboxPopupSearchboxElement extends
+     super.onInputWrapperFocusout(e);
+     this.$.input.blur();
+ 
+-    // The full omnibox lives in its own widget, so blurring its WebUI does not
+-    // automatically dismiss that widget. Close only when focus leaves this
+-    // searchbox entirely; transitions into its dropdown must remain usable.
++    // The full omnibox lives in its own widget, so a click on the native
++    // sidebar address field first blurs this WebUI and only then reaches the
++    // native field. Defer dismissal through the rest of that pointer dispatch:
++    // native `SetFocus(true)` will schedule focus and invalidate this close,
++    // while a genuine outside click will leave it valid.
+     const nextTarget = e.relatedTarget as Node | null;
+-    if (!nextTarget || !this.shadowRoot.contains(nextTarget)) {
+-      this.popupPageHandler_.closeUI();
++    if (nextTarget && this.shadowRoot.contains(nextTarget)) {
++      return;
+     }
++    const generation = ++this.focusoutCloseGeneration_;
++    window.setTimeout(() => {
++      if (generation !== this.focusoutCloseGeneration_) {
++        return;
++      }
++      const activeElement = this.shadowRoot?.activeElement;
++      if (activeElement && this.shadowRoot.contains(activeElement)) {
++        return;
++      }
++      this.popupPageHandler_.closeUI();
++    }, 0);
+   }
+ 
+   protected onVoiceSearchClick_() {
+diff --git a/chrome/browser/ui/views/frame/browser_view.cc b/chrome/browser/ui/views/frame/browser_view.cc
+index 3bafafd54ff30c68b34f381e9fd304221ce1abec..285656ef38c5454e874ee1262b6f3878c47d38d8 100644
+--- a/chrome/browser/ui/views/frame/browser_view.cc
++++ b/chrome/browser/ui/views/frame/browser_view.cc
+@@ -3057,7 +3057,13 @@ void BrowserView::ShowZeniumNewTabOmnibox() {
+     view->SetUserText(std::u16string(), /*update_popup=*/false);
+ 
+     zenium_new_tab_omnibox_active_ = true;
++    // `SetFocusToLocationBar()` synchronously calls
++    // `LocationBarView::OpenOmniboxPopup()`. Mark this internal focus handoff
++    // so it is not mistaken for a later, explicit address-bar click that exits
++    // the centered palette.
++    zenium_new_tab_omnibox_starting_ = true;
+     SetFocusToLocationBar(/*is_user_initiated=*/true);
++    zenium_new_tab_omnibox_starting_ = false;
+ 
+     // The focus handoff can replace the inherited draft. Reassert the empty
+     // text, then begin a distinct WebUI session. The explicit session signal
+diff --git a/chrome/browser/ui/views/frame/browser_view.h b/chrome/browser/ui/views/frame/browser_view.h
+index 694ed65838699bc34af20f1c4cbe7573fd2a26c4..4cddfaf49245cbc97ca033658a4b9ee2ea5e7c38 100644
+--- a/chrome/browser/ui/views/frame/browser_view.h
++++ b/chrome/browser/ui/views/frame/browser_view.h
+@@ -373,6 +373,9 @@ class BrowserView : public BrowserWindow,
+   bool IsZeniumNewTabOmniboxActive() const {
+     return zenium_new_tab_omnibox_active_;
+   }
++  bool IsZeniumNewTabOmniboxStarting() const {
++    return zenium_new_tab_omnibox_starting_;
++  }
+   void ClearZeniumNewTabOmnibox() { zenium_new_tab_omnibox_active_ = false; }
+   void SetZeniumOmniboxPopupOpen(bool open);
+ 
+@@ -1466,6 +1469,7 @@ class BrowserView : public BrowserWindow,
+   base::CallbackListSubscription zenium_layout_subscription_;
+ 
+   bool zenium_new_tab_omnibox_active_ = false;
++  bool zenium_new_tab_omnibox_starting_ = false;
+   bool zenium_omnibox_popup_open_ = false;
+ 
+   base::CallbackListSubscription vertical_tab_subscription_;
+diff --git a/chrome/browser/ui/views/location_bar/location_bar_view.cc b/chrome/browser/ui/views/location_bar/location_bar_view.cc
+index 493714a22c629b30c19ad3dbf7c6261269541480..f72ca9d0740c65cd5626c2e8297556cb2869ddd0 100644
+--- a/chrome/browser/ui/views/location_bar/location_bar_view.cc
++++ b/chrome/browser/ui/views/location_bar/location_bar_view.cc
+@@ -2110,8 +2110,34 @@ void LocationBarView::OnOmniboxFocused() {
+ void LocationBarView::OpenOmniboxPopup() {
+   if (base::FeatureList::IsEnabled(omnibox::kWebUIOmniboxFullPopup) &&
+       !in_popup_state_transition_) {
++    bool changed_from_new_tab_mode = false;
++    if (BrowserView* browser_view =
++            BrowserView::GetBrowserViewForBrowser(browser_);
++        browser_view && browser_view->IsToolbarInVerticalSidebar() &&
++        browser_view->IsZeniumNewTabOmniboxActive() &&
++        !browser_view->IsZeniumNewTabOmniboxStarting()) {
++      // The centered New Tab palette and the corner address editor share a
++      // retained WebUI/widget. A native address-bar click is an explicit mode
++      // boundary: restore the active page address before reusing that surface,
++      // otherwise it keeps the empty New Tab draft and stale centered bounds.
++      browser_view->ClearZeniumNewTabOmnibox();
++      // Revert only the edit model here. `OmniboxViewViews::RevertAll()` also
++      // invokes the global popup closer, which can hide the retained widget in
++      // the middle of this same mouse-release dispatch and require a second
++      // click before it becomes interactive again.
++      omnibox_controller_->StopAutocomplete(/*clear_result=*/true);
++      omnibox_controller_->edit_model()->Revert();
++      omnibox_view_->SelectAll(/*reversed=*/true);
++      changed_from_new_tab_mode = true;
++    }
+     if (auto* popup_view = GetOmniboxPopupView()) {
+       popup_view->OnFocus();
++      if (changed_from_new_tab_mode) {
++        // `OnFocus()` only sends a focus IPC when the retained full popup is
++        // already open. Force a complete state delivery for the mode switch so
++        // text, selection, and hit-test geometry agree immediately.
++        popup_view->SyncNativeStateToWebUI();
++      }
+     }
+   }
+ }
+diff --git a/chrome/browser/ui/views/omnibox/omnibox_full_popup_webui_content.cc b/chrome/browser/ui/views/omnibox/omnibox_full_popup_webui_content.cc
+index 883603720b900d2c6c1d82bce82e6fc1665ad8f0..5ebf771ec4cf788bc6de103ad3845bb6dbea943e 100644
+--- a/chrome/browser/ui/views/omnibox/omnibox_full_popup_webui_content.cc
++++ b/chrome/browser/ui/views/omnibox/omnibox_full_popup_webui_content.cc
+@@ -10,13 +10,18 @@
+ #include "chrome/browser/ui/omnibox/clipboard_utils.h"
+ #include "chrome/browser/ui/omnibox/omnibox_controller.h"
+ #include "chrome/browser/ui/omnibox/omnibox_edit_model.h"
++#include "chrome/browser/ui/omnibox/omnibox_popup_view.h"
++#include "chrome/browser/ui/omnibox/omnibox_view.h"
++#include "chrome/browser/ui/views/frame/browser_view.h"
+ #include "chrome/browser/ui/views/omnibox/omnibox_popup_presenter_base.h"
+ #include "chrome/common/webui_url_constants.h"
+ #include "content/public/browser/web_contents.h"
+ #include "third_party/blink/public/common/context_menu_data/edit_flags.h"
+ #include "ui/base/metadata/metadata_impl_macros.h"
++#include "ui/display/screen.h"
+ #include "ui/menus/simple_menu_model.h"
+ #include "ui/strings/grit/ui_strings.h"
++#include "ui/views/widget/widget.h"
+ 
+ OmniboxFullPopupWebUIContent::OmniboxFullPopupWebUIContent(
+     OmniboxPopupPresenterBase* presenter,
+@@ -37,6 +42,32 @@ bool OmniboxFullPopupWebUIContent::EscClosesUI() const {
+ }
+ 
+ void OmniboxFullPopupWebUIContent::CloseUI() {
++  BrowserView* browser_view = BrowserView::GetBrowserViewForBrowser(
++      location_bar()->GetBrowser());
++  views::Widget* browser_widget =
++      browser_view ? browser_view->GetWidget() : nullptr;
++  if (browser_view && browser_widget && browser_widget->IsActive() &&
++      browser_view->IsToolbarInVerticalSidebar() &&
++      browser_view->IsZeniumNewTabOmniboxActive() &&
++      location_bar()->BoundsInScreen().Contains(
++          display::Screen::Get()->GetCursorScreenPoint())) {
++    // On Linux the centered popup is an active native child Widget. The first
++    // click on the sidebar address field therefore deactivates the popup before
++    // Views delivers the click to the field. Treat that cross-widget blur as
++    // the requested New Tab -> address transition instead of dismissing it and
++    // forcing the user to click a second time.
++    browser_view->ClearZeniumNewTabOmnibox();
++    controller()->StopAutocomplete(/*clear_result=*/true);
++    controller()->edit_model()->Revert();
++    location_bar()->GetOmniboxView()->SelectAll(/*reversed=*/true);
++    if (OmniboxPopupView* popup_view =
++            location_bar()->GetOmniboxPopupView()) {
++      popup_view->OnFocus();
++      popup_view->SyncNativeStateToWebUI();
++      return;
++    }
++  }
++
+   // A floating omnibox is an editing surface over the current page. If it is
+   // dismissed without accepting a match, restore the page's permanent address
+   // instead of leaving the canceled draft mirrored in the sidebar.
+diff --git a/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.cc b/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.cc
+index 7b33fdf068e3bf363e6953d0b33a7abefd2cb5b7..708c91fd6c002f0e9677d4f5e0adeffabf81151b 100644
+--- a/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.cc
++++ b/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.cc
+@@ -74,12 +74,19 @@ void OmniboxPopupFullPresenter::Show() {
+   if (browser_view) {
+     browser_view->SetZeniumOmniboxPopupOpen(true);
+   }
++  const bool is_vertical_sidebar =
++      browser_view && browser_view->IsToolbarInVerticalSidebar();
++  if (is_vertical_sidebar && GetWebUIContent()) {
++    // The centered New Tab palette and corner address editor retain the same
++    // renderer. Update its auto-resize width on every show request, including
++    // when the native Widget is already visible; synchronizing only the native
++    // bounds leaves a stale renderer surface and mismatched input hit region.
++    GetWebUIContent()->OnLocationBarBoundsChanged();
++  }
+   // Placement can change while the popup is already visible (for example,
+   // clicking New Tab while editing the address). The base presenter skips
+   // layout in that case, so synchronize explicitly.
+   SynchronizePopupBounds();
+-  const bool is_vertical_sidebar =
+-      browser_view && browser_view->IsToolbarInVerticalSidebar();
+   auto* results_frame =
+       GetWidget() ? views::AsViewClass<FullWebUIOmniboxFrame>(GetResultsFrame())
+                   : nullptr;
+diff --git a/chrome/browser/ui/webui/searchbox/webui_omnibox_handler.cc b/chrome/browser/ui/webui/searchbox/webui_omnibox_handler.cc
+index e0c94945d415d6c2904bbf766cf50b30349c3082..f1595b9fb6833a11ce242d848151acf0c91cd45d 100644
+--- a/chrome/browser/ui/webui/searchbox/webui_omnibox_handler.cc
++++ b/chrome/browser/ui/webui/searchbox/webui_omnibox_handler.cc
+@@ -335,6 +335,27 @@ void WebuiOmniboxHandler::OnFocusChanged(bool focused) {
+   }
+ }
+ 
++void WebuiOmniboxHandler::QueryAutocomplete(
++    int32_t query_id,
++    const std::u16string& input,
++    bool prevent_inline_autocomplete,
++    uint32_t cursor_position) {
++  // The generic WebUI searchbox marks every query as user input. For an empty
++  // on-focus query in the address editor, that turns a permanent page URL into
++  // an empty draft; a later state synchronization then replaces the visible
++  // address with the New Tab placeholder. Preserve the steady address state
++  // while still running zero-suggest. An actual New Tab palette starts with an
++  // explicit empty user draft, so it intentionally does not take this path.
++  const bool preserve_permanent_address =
++      input.empty() && !edit_model()->user_input_in_progress();
++  SearchboxHandler::QueryAutocomplete(query_id, input,
++                                      prevent_inline_autocomplete,
++                                      cursor_position);
++  if (preserve_permanent_address) {
++    edit_model()->SetInputInProgress(false);
++  }
++}
++
+ // TODO(crbug.com/469098088): Use something other than
+ //   `AutocompleteController::Observer::OnStart()` to reduce the IPC overhead
+ //   due to the fact that `AutocompleteController::Start()` gets invoked on
+diff --git a/chrome/browser/ui/webui/searchbox/webui_omnibox_handler.h b/chrome/browser/ui/webui/searchbox/webui_omnibox_handler.h
+index 4d346eac91aa0dbd8babb8f38e6204fba3d65b28..3ad8f71c2495829c8714cced060a683c3b663397 100644
+--- a/chrome/browser/ui/webui/searchbox/webui_omnibox_handler.h
++++ b/chrome/browser/ui/webui/searchbox/webui_omnibox_handler.h
+@@ -71,6 +71,10 @@ class WebuiOmniboxHandler : public ContextualSearchboxHandler,
+       const omnibox::GroupConfigMap& suggestion_groups_map,
+       const TemplateURLService* turl_service) const override;
+   void OnFocusChanged(bool focused) override;
++  void QueryAutocomplete(int32_t query_id,
++                         const std::u16string& input,
++                         bool prevent_inline_autocomplete,
++                         uint32_t cursor_position) override;
+ 
+   // AutocompleteController::Observer:
+   void OnStart(AutocompleteController* controller,
