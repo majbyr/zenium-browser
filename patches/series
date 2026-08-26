@@ -346,6 +346,7 @@ zenium/ui/layout/sidebar-popup-polish.patch
 zenium/ui/layout/sidebar-new-tab-suggestions.patch
 zenium/ui/layout/sidebar-new-tab-consistency.patch
 zenium/ui/layout/sidebar-new-tab-production.patch
+zenium/ui/layout/sidebar-new-tab-widget-stability.patch
 
 zenium/ui/generate-standard-qr-codes.patch
 zenium/ui/pdf-viewer.patch
