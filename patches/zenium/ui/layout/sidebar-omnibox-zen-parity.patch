@@ -1,0 +1,242 @@
+diff --git a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.css b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.css
+index ea918d2eb30fd64045637f16f216f8cc71a9b456..d11929070a8fac70f8690b01f5bbaa13c8e4ce7c 100644
+--- a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.css
++++ b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.css
+@@ -28,13 +28,16 @@
+   --cr-searchbox-icon-width: 26px;
+   --cr-searchbox-inner-icon-margin: 8px;
+   --cr-searchbox-match-font-weight: 400;
+-  --cr-searchbox-match-padding: 8px;
++  --cr-searchbox-match-padding: 9px;
+   --cr-searchbox-shadow: none;
+   --cr-searchbox-voice-icon-offset: 16px;
+   --cr-searchbox-voice-search-button-width: 0px;
+ 
+   --cr-searchbox-width: calc(100% - 2 * var(--alignment-inset-horizontal));
+-  --cr-searchbox-height: 50px;
++  --cr-searchbox-height: 52px;
++  --cr-searchbox-input-height: 48px;
++  --cr-searchbox-results-action-chip-height: 28px;
++  --color-searchbox-results-action-chip: transparent;
+   border-radius: var(--cr-searchbox-border-radius);
+   display: block;
+   font-size: var(--cr-searchbox-font-size, 16px);
+@@ -106,7 +109,7 @@
+ /* TODO(b/511199705): Widget is too wide when dropdown is visible. This is a
+    workaround until we fix that. */
+ :host([dropdown-is-visible]) {
+-  --cr-searchbox-border-radius: 12px;
++  --cr-searchbox-border-radius: 10px;
+   --cr-searchbox-width: 100%;
+ }
+ 
+@@ -250,6 +253,24 @@ cr-searchbox-dropdown::part(dropdown-content) {
+   padding-top: 2px;
+ }
+ 
++/* The native presenter makes URL editing 520px wide and the New Tab command
++ * palette 820px wide. Match Zen's taller centered silhouette responsively,
++ * without inferring mode from volatile focus, input, or result state. */
++@media (min-width: 700px) {
++  :host {
++    --cr-searchbox-height: 62px;
++    --cr-searchbox-input-height: 52px;
++  }
++
++  cr-searchbox-input {
++    padding-top: 6px;
++  }
++
++  cr-searchbox-dropdown::part(dropdown-content) {
++    padding-top: 12px;
++  }
++}
++
+ .searchbox-icon-button-container.lens {
+   margin-inline-end: 10px;
+ }
+diff --git a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts
+index aa1abbd45d2e494696218b13f99932e82314cc55..4c1c0ef5bc02d4b242860eca1859dec31f4ca7c5 100644
+--- a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts
++++ b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts
+@@ -299,6 +299,14 @@ export class OmniboxPopupSearchboxElement extends
+     return super.isAutocompleteResultStale(result) || !result.matches.length;
+   }
+ 
++  override async onAutocompleteResultChanged(result: AutocompleteResult) {
++    // Zen keeps the floating palette compact and stable at five visible
++    // choices. Trim the rendered result set before the shared searchbox lays
++    // it out so asynchronous providers cannot change the surface silhouette.
++    result.matches = result.matches.slice(0, 5);
++    await super.onAutocompleteResultChanged(result);
++  }
++
+   //========================================================================
+   // Event handlers
+   //========================================================================
+@@ -458,11 +466,12 @@ export class OmniboxPopupSearchboxElement extends
+     this.getDropdownElement().unselect();
+     this.pageHandler().stopAutocomplete(/*clearResult=*/ false);
+ 
+-    // State synchronization is asynchronous. The stop above can arrive after
+-    // the browser has already started New Tab zero-suggest, leaving the
+-    // centered surface as an input-only box. Restart the empty focused query
+-    // on the same Mojo pipe so it is guaranteed to run after that stop.
+-    if (state.isFocused && state.userInputInProgress && !state.text.trim()) {
++    // State synchronization is asynchronous. Restart zero-suggest on the same
++    // Mojo pipe after the stop above for both a permanent URL being edited and
++    // an empty New Tab session. This keeps either surface populated on every
++    // explicit open, even when a previous retained-WebUI query raced with it.
++    if (state.isFocused &&
++        (!state.userInputInProgress || !state.text.trim())) {
+       this.queryAutocomplete('');
+     }
+   }
+diff --git a/chrome/browser/ui/views/omnibox/full_webui_omnibox_frame.cc b/chrome/browser/ui/views/omnibox/full_webui_omnibox_frame.cc
+index a6846aa5865c1ea703508f21315dcd7c7eed294c..521724334cafd25177d1d3dd1221fe24482b148b 100644
+--- a/chrome/browser/ui/views/omnibox/full_webui_omnibox_frame.cc
++++ b/chrome/browser/ui/views/omnibox/full_webui_omnibox_frame.cc
+@@ -11,7 +11,6 @@
+ #include "ui/base/metadata/metadata_impl_macros.h"
+ #include "ui/gfx/geometry/rounded_corners_f.h"
+ #include "ui/views/bubble/bubble_border.h"
+-#include "ui/views/layout/layout_provider.h"
+ #include "ui/views/view.h"
+ 
+ #if defined(USE_AURA)
+@@ -50,7 +49,10 @@ class ResultsViewTargeterDelegate : public views::ViewTargeterDelegate {
+ FullWebUIOmniboxFrame::FullWebUIOmniboxFrame(views::View* contents,
+                                              LocationBar* location_bar,
+                                              bool forward_mouse_events)
+-    : RoundedOmniboxResultsFrame(contents, location_bar, forward_mouse_events) {}
++    : RoundedOmniboxResultsFrame(contents,
++                                 location_bar,
++                                 forward_mouse_events,
++                                 /*corner_radius=*/10) {}
+ 
+ FullWebUIOmniboxFrame::~FullWebUIOmniboxFrame() = default;
+ 
+@@ -60,12 +62,14 @@ void FullWebUIOmniboxFrame::SetElevation(int elevation) {
+     return;
+   }
+ 
+-  const int corner_radius = views::LayoutProvider::Get()->GetCornerRadiusMetric(
+-      views::ShapeContextTokens::kOmniboxExpandedRadius);
++  // Zen's Linux floating URL bar uses its medium 10 px corner token. Keep the
++  // native frame and the WebUI surface on the same curve so no doubled edge is
++  // visible at the corners.
++  constexpr int kZeniumPopupCornerRadius = 10;
+   auto border = std::make_unique<views::BubbleBorder>(
+       views::BubbleBorder::Arrow::NONE,
+       views::BubbleBorder::Shadow::STANDARD_SHADOW);
+-  border->set_rounded_corners(gfx::RoundedCornersF(corner_radius));
++  border->set_rounded_corners(gfx::RoundedCornersF(kZeniumPopupCornerRadius));
+   border->set_draw_border_stroke(true);
+   border->set_md_shadow_elevation(elevation);
+   SetBorder(std::move(border));
+diff --git a/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.cc b/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.cc
+index 6182886c0d89ae3d98fd8bb2298655116f90af46..7b33fdf068e3bf363e6953d0b33a7abefd2cb5b7 100644
+--- a/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.cc
++++ b/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.cc
+@@ -37,6 +37,9 @@
+ 
+ namespace {
+ 
++// Address editing remains attached to the sidebar, while New Tab opens Zen's
++// wider centered command palette. The centered width matches Zen's 750 CSS-px
++// cap under Zenium's common Linux display scale.
+ constexpr int kZeniumSidebarPopupWidth = 520;
+ constexpr int kZeniumCenteredPopupWidth = 820;
+ constexpr int kZeniumPopupWindowMargin = 24;
+diff --git a/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.cc b/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.cc
+index 6d305e6076ad4887eab6a1a73867f0ba08eb57c3..b7628934bfd2fa255c5ab11a841dd8338dc49988 100644
+--- a/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.cc
++++ b/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.cc
+@@ -246,10 +246,9 @@ DEFINE_VIEW_BUILDER(/* no export */, TopBackgroundView)
+ RoundedOmniboxResultsFrame::RoundedOmniboxResultsFrame(
+     views::View* contents,
+     LocationBar* location_bar,
+-    bool forward_mouse_events)
++    bool forward_mouse_events,
++    int corner_radius)
+     : contents_(contents), forward_mouse_events_(forward_mouse_events) {
+-  const int corner_radius = views::LayoutProvider::Get()->GetCornerRadiusMetric(
+-      views::ShapeContextTokens::kOmniboxExpandedRadius);
+   // Host the contents in its own View to simplify layout and customization.
+   auto contents_host_builder =
+       views::Builder<views::View>()
+diff --git a/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.h b/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.h
+index df313ddc8510468140788577cd9961c56b68b4e8..43ef49ae0a3ceccd4c52bb71ab763c6cd82b0a5b 100644
+--- a/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.h
++++ b/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.h
+@@ -23,7 +23,8 @@ class RoundedOmniboxResultsFrame : public views::View {
+  public:
+   RoundedOmniboxResultsFrame(views::View* contents,
+                              LocationBar* location_bar,
+-                             bool forward_mouse_events);
++                             bool forward_mouse_events,
++                             int corner_radius = 12);
+   RoundedOmniboxResultsFrame(const RoundedOmniboxResultsFrame&) = delete;
+   RoundedOmniboxResultsFrame& operator=(const RoundedOmniboxResultsFrame&) =
+       delete;
+diff --git a/components/omnibox/browser/autocomplete_grouper_sections.cc b/components/omnibox/browser/autocomplete_grouper_sections.cc
+index afb5ecf0d124515ecd0f913136922f7ebccdfeae..e6d7a655a667f13e64c1c8e0a8042660df15de1b 100644
+--- a/components/omnibox/browser/autocomplete_grouper_sections.cc
++++ b/components/omnibox/browser/autocomplete_grouper_sections.cc
+@@ -502,7 +502,7 @@ DesktopSRPZpsSection::DesktopSRPZpsSection(
+     size_t search_limit,
+     size_t url_limit,
+     size_t contextual_action_limit)
+-    : ZpsSection(
++    : ZpsSectionWithLocalHistory(
+           max_suggestions,
+           {
+               Group(1,
+@@ -537,7 +537,7 @@ DesktopSRPZpsSection::DesktopSRPZpsSection(
+ DesktopWebURLZpsSection::DesktopWebURLZpsSection(
+     const omnibox::GroupConfigMap& group_configs,
+     size_t limit)
+-    : ZpsSection(
++    : ZpsSectionWithLocalHistory(
+           limit,
+           {
+               Group(1,
+diff --git a/components/omnibox/browser/autocomplete_grouper_sections.h b/components/omnibox/browser/autocomplete_grouper_sections.h
+index ca61173d099e60351a9c5d657457318044e120ff..1b91e10a9981dfd6dc38cc7c717f3ec4fe5a9cbd 100644
+--- a/components/omnibox/browser/autocomplete_grouper_sections.h
++++ b/components/omnibox/browser/autocomplete_grouper_sections.h
+@@ -233,7 +233,7 @@ class DesktopSecondaryNTPZpsSection : public ZpsSection {
+ //  - up to `search_limit` previous search related suggestions.
+ //  - up to `search_limit` personalized suggestions.
+ //  - up to `url_limit` most visited tiles suggestions
+-class DesktopSRPZpsSection : public ZpsSection {
++class DesktopSRPZpsSection : public ZpsSectionWithLocalHistory {
+  public:
+   explicit DesktopSRPZpsSection(const omnibox::GroupConfigMap& group_configs,
+                                 size_t max_suggestions,
+@@ -244,7 +244,7 @@ class DesktopSRPZpsSection : public ZpsSection {
+ 
+ // Section expressing the Desktop URL ZPS limits and grouping for the Web.
+ // - up to `limit` most visited tiles suggestions.
+-class DesktopWebURLZpsSection : public ZpsSection {
++class DesktopWebURLZpsSection : public ZpsSectionWithLocalHistory {
+  public:
+   explicit DesktopWebURLZpsSection(const omnibox::GroupConfigMap& group_configs,
+                                    size_t limit);
+diff --git a/components/omnibox/browser/autocomplete_grouper_sections_unittest.cc b/components/omnibox/browser/autocomplete_grouper_sections_unittest.cc
+index 75b02f71d28043351e7677b4321bafbbf37e4ee2..2e6dc34c42a6ade363fb071b17ff45c09c813df9 100644
+--- a/components/omnibox/browser/autocomplete_grouper_sections_unittest.cc
++++ b/components/omnibox/browser/autocomplete_grouper_sections_unittest.cc
+@@ -2128,9 +2128,11 @@ TEST(AutocompleteGrouperSectionsTest, DesktopSRPZpsSectionWithUrls) {
+     SCOPED_TRACE("Clipboard URL is the first desktop zero-prefix suggestion.");
+     test(0,
+          {
+-             CreateMatch(101, omnibox::GROUP_MOBILE_CLIPBOARD),
+              CreateMatch(100, omnibox::GROUP_PREVIOUS_SEARCH_RELATED),
+              CreateMatch(99, omnibox::GROUP_MOST_VISITED),
++             // Clipboard providers update asynchronously, so their high
++             // relevance match can arrive after existing ZPS results.
++             CreateMatch(101, omnibox::GROUP_MOBILE_CLIPBOARD),
+          },
+          {101, 100, 99});
+   }
