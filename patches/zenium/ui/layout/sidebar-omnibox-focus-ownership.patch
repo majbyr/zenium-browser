@@ -1,0 +1,53 @@
+diff --git a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.html.ts b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.html.ts
+--- a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.html.ts
++++ b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.html.ts
+@@ -8,7 +8,9 @@ import type {OmniboxPopupSearchboxElement} from './omnibox_popup_searchbox.js';
+ 
+ export function getHtml(this: OmniboxPopupSearchboxElement) {
+   return html`
+-    <div id="inputWrapper" @focusout="${this.onInputWrapperFocusout}"
++    <div id="inputWrapper"
++        @pointerdown="${this.onInputWrapperPointerdown_}"
++        @focusout="${this.onInputWrapperFocusout}"
+         @keydown="${this.onInputWrapperKeydown}">
+       <cr-searchbox-input id="input"
+           exportparts="searchbox-input"
+diff --git a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts
+--- a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts
++++ b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts
+@@ -146,6 +146,9 @@ export class OmniboxPopupSearchboxElement extends
+   private pendingFocusSelection_: {start: number, end: number}|null = null;
+   // Invalidates focus work queued across WebUI state or visibility changes.
+   private focusRequestGeneration_: number = 0;
++  // Distinguishes an internal surface click from a genuine focus transfer out
++  // of the separately hosted popup Widget.
++  private pointerDownWithinSearchbox_: boolean = false;
+   private permanentDisplayText_: string = '';
+   private fullUrlShown_: boolean = false;
+   // TODO(b/504669677): Replace `deferredFocusAction_` with
+@@ -610,7 +613,25 @@ export class OmniboxPopupSearchboxElement extends
+     }
+   }
+ 
++  protected onInputWrapperPointerdown_() {
++    this.pointerDownWithinSearchbox_ = true;
++    requestAnimationFrame(() => {
++      this.pointerDownWithinSearchbox_ = false;
++    });
++  }
++
+   override onInputWrapperFocusout(e: FocusEvent) {
++    if (this.pointerDownWithinSearchbox_) {
++      // Clicking non-focusable padding or background inside the retained WebUI
++      // temporarily reports a null relatedTarget. Keep the editing session and
++      // restore its exact selection after the pointer event instead of treating
++      // that internal click as an outside dismissal.
++      const input = this.getInputElement().inputElement;
++      this.scheduleFocus_(
++          {start: input.selectionStart || 0, end: input.selectionEnd || 0});
++      return;
++    }
++
+     // Note: super.onInputWrapperFocusout calls
+     // this.pageHandler().onFocusChanged(false), which dispatches to
+     // searchboxPageHandler_.onFocusChanged(false) via our pageHandler()
