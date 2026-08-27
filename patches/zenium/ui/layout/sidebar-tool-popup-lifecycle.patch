@@ -1,0 +1,45 @@
+--- a/chrome/browser/ui/views/frame/browser_view.cc
++++ b/chrome/browser/ui/views/frame/browser_view.cc
+@@ -1940,6 +1940,13 @@ void BrowserView::StartZenCollapseTimer(base::TimeDelta delay) {
+                      /*reveal_top=*/false, /*reveal_side=*/false));
+ }
+ 
++void BrowserView::MaybeCollapseZenModeAfterDeactivation() {
++  if (!zen_mode_enabled_ || !GetWidget() || GetWidget()->IsActive()) {
++    return;
++  }
++  UpdateZenModeReveal(/*reveal_top=*/false, /*reveal_side=*/false);
++}
++
+ bool BrowserView::IsLeavingZenSideGap(const gfx::Point& previous_point,
+                                       const gfx::Point& point) const {
+   if (!zen_side_chrome_animation_.IsShowing() || IsZenModeSideChromePinned() ||
+@@ -4903,9 +4910,16 @@ void BrowserView::OnWidgetActivationChanged(views::Widget* widget,
+     }
+   }
+ 
+-  // Collapse zen mode chrome when the window is deactivated.
++  // A toolbar bubble can deactivate the browser widget before its own widget
++  // is visible and registered with its anchor. Defer the collapse until the
++  // current task completes so the shared anchored-bubble scan can observe it.
++  // This keeps side-chrome tool surfaces open without coupling BrowserView to
++  // individual extensions, profile, media, or toolbar action controllers.
+   if (!active && zen_mode_enabled_) {
+-    UpdateZenModeReveal(/*reveal_top=*/false, /*reveal_side=*/false);
++    base::SequencedTaskRunner::GetCurrentDefault()->PostTask(
++        FROM_HERE,
++        base::BindOnce(&BrowserView::MaybeCollapseZenModeAfterDeactivation,
++                       weak_ptr_factory_.GetWeakPtr()));
+   }
+ 
+   browser_->GetFeatures()
+--- a/chrome/browser/ui/views/frame/browser_view.h
++++ b/chrome/browser/ui/views/frame/browser_view.h
+@@ -972,6 +972,7 @@ class BrowserView : public BrowserWindow,
+   void UpdateZenCollapseButtonVisibility();
+   void UpdateZenModeEventMonitor();
+   void StartZenCollapseTimer(base::TimeDelta delay);
++  void MaybeCollapseZenModeAfterDeactivation();
+   bool IsLeavingZenSideGap(const gfx::Point& previous_point,
+                            const gfx::Point& point) const;
+   void UpdateZenModeRevealFromCursor();
