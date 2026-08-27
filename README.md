@@ -25,8 +25,12 @@ Building it requires downloading and compiling the compatible Chromium version.
 
 ## DRM
 
-Widevine is not redistributed with Zenium. On Linux, an existing Google Chrome
-installation can be used to enable protected media:
+Widevine is not redistributed with Zenium. On Linux, macOS, and Windows, Zenium
+can import a compatible module from a local Google Chrome installation. Use the
+toggle under **Settings > Privacy and security > Site settings > Protected
+content**, then restart Zenium when prompted.
+
+The following Linux command is also available as a fallback:
 
 ```sh
 python3 devutils/setup_widevine.py

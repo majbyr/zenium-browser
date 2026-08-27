@@ -364,3 +364,4 @@ zenium/ui/page-zoom-indicator.patch
 zenium/ui/add-more-zoom-presets.patch
 zenium/ui/zenium-noise-page-info.patch
 zenium/ui/show-tabs-from-non-account-backends.patch
+zenium/settings/automatic-widevine.patch

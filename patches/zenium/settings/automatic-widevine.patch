@@ -1,0 +1,819 @@
+diff --git a/chrome/app/settings_strings.grdp b/chrome/app/settings_strings.grdp
+index 1c7d6cb8da7fc559122218601ce144f801603749..298bd636407c9fecd0278b0941c3193f06dbbee0 100644
+--- a/chrome/app/settings_strings.grdp
++++ b/chrome/app/settings_strings.grdp
+@@ -3249,6 +3249,33 @@
+     <message name="IDS_SETTINGS_SITE_SETTINGS_PROTECTED_CONTENT_DESCRIPTION" desc="Description of the protected content content setting.">
+       To play content protected by copyright, sites may need to use a content protection service
+     </message>
++    <message name="IDS_SETTINGS_ZENIUM_WIDEVINE_TITLE" desc="Title of the setting that imports Widevine DRM support from Google Chrome.">
++      Use Widevine from Google Chrome
++    </message>
++    <message name="IDS_SETTINGS_ZENIUM_WIDEVINE_AVAILABLE" desc="Description shown when a compatible Google Chrome Widevine installation is available to import.">
++      Turn this on to find and copy a compatible Widevine installation from Google Chrome
++    </message>
++    <message name="IDS_SETTINGS_ZENIUM_WIDEVINE_ENABLED" desc="Description shown when Widevine has been imported from Google Chrome.">
++      Widevine <ph name="VERSION">$1<ex>4.10.3050.0</ex></ph> is installed from Google Chrome
++    </message>
++    <message name="IDS_SETTINGS_ZENIUM_WIDEVINE_BUSY" desc="Description shown while Zenium is checking, importing, or removing Widevine.">
++      Checking the Google Chrome installation…
++    </message>
++    <message name="IDS_SETTINGS_ZENIUM_WIDEVINE_NOT_FOUND" desc="Description shown when Google Chrome or its Widevine module cannot be found.">
++      No Google Chrome Widevine installation was found
++    </message>
++    <message name="IDS_SETTINGS_ZENIUM_WIDEVINE_INCOMPATIBLE" desc="Description shown when the detected Google Chrome Widevine module is incompatible with Zenium.">
++      Google Chrome's Widevine installation is not compatible with this version of Zenium
++    </message>
++    <message name="IDS_SETTINGS_ZENIUM_WIDEVINE_COPY_FAILED" desc="Description shown when Zenium cannot import Widevine from Google Chrome.">
++      Widevine could not be imported. Check file permissions and try again
++    </message>
++    <message name="IDS_SETTINGS_ZENIUM_WIDEVINE_REMOVE_FAILED" desc="Description shown when Zenium cannot remove the imported Widevine module.">
++      Widevine is in use. Close protected media tabs and try again
++    </message>
++    <message name="IDS_SETTINGS_ZENIUM_WIDEVINE_RESTART_REQUIRED" desc="Description shown after the imported Widevine state changes and a browser restart is needed.">
++      Restart Zenium to finish applying this change
++    </message>
+     <message name="IDS_SETTINGS_SITE_SETTINGS_PROTECTED_CONTENT_ALLOWED" desc="Label for the enabled option of the protected content content setting.">
+       Sites can play protected content
+     </message>
+@@ -4934,4 +4961,4 @@
+   <message name="IDS_SETTINGS_SKILLS_THINGS_TO_CONSIDER_BULLET_TWO" desc="Second bullet point under the 'Things to consider' column in the Skills settings page.">
+     Skills are saved to your Google Account
+   </message>
+-</grit-part>
+\ No newline at end of file
++</grit-part>
+diff --git a/chrome/browser/resources/settings/site_settings/protected_content_page.html b/chrome/browser/resources/settings/site_settings/protected_content_page.html
+index 61fb00dfe6a941a609b4323f53eb3426eacb8ab2..7d4a2abf4d39001367fadacc29bc71af339d0d3e 100644
+--- a/chrome/browser/resources/settings/site_settings/protected_content_page.html
++++ b/chrome/browser/resources/settings/site_settings/protected_content_page.html
+@@ -1,4 +1,8 @@
+-<style include="cr-hidden-style settings-shared site-settings-shared"></style>
++<style include="cr-hidden-style settings-shared site-settings-shared">
++  #widevineToggle {
++    border-bottom: var(--cr-separator-line);
++  }
++</style>
+ <if expr="not is_chromeos and not is_win">
+ <settings-subpage page-title="$i18n{siteSettingsProtectedContent}"
+     route-path$="[[routePath]]">
+@@ -8,6 +12,22 @@
+     search-label="$i18n{siteSettingsAllSitesSearch}"
+     search-icon="settings20:filter-list"
+     search-term="{{searchTerm}}" route-path$="[[routePath]]">
++</if>
++<if expr="is_linux or is_macosx or is_win">
++  <settings-toggle-button id="widevineToggle"
++      pref="[[widevinePref_]]"
++      no-set-pref
++      disabled="[[widevineBusy_]]"
++      label="$i18n{zeniumWidevineTitle}"
++      sub-label="[[getWidevineDescription_(
++          widevineState_, widevineBusy_, widevineRestartRequired_)]]"
++      on-settings-boolean-control-change="onWidevineToggleChange_">
++    <template is="dom-if" if="[[widevineRestartRequired_]]">
++      <cr-button slot="more-actions" on-click="onWidevineRestartClick_">
++        $i18n{restart}
++      </cr-button>
++    </template>
++  </settings-toggle-button>
+ </if>
+   <div class="radio-group">
+     <div class="secondary">
+diff --git a/chrome/browser/resources/settings/site_settings/protected_content_page.ts b/chrome/browser/resources/settings/site_settings/protected_content_page.ts
+index 3cf0a97741dcfeb712fa1fda418df5ff3f203c3c..6688139c9bb81c521b5b33d61bb8b9840eb2f89d 100644
+--- a/chrome/browser/resources/settings/site_settings/protected_content_page.ts
++++ b/chrome/browser/resources/settings/site_settings/protected_content_page.ts
+@@ -3,10 +3,12 @@
+ // found in the LICENSE file.
+ 
+ import '/shared/settings/prefs/prefs.js';
++import 'chrome://resources/cr_elements/cr_button/cr_button.js';
+ import 'chrome://resources/cr_elements/cr_shared_style.css.js';
+ import 'chrome://resources/cr_elements/icons.html.js';
+ import '../controls/collapse_radio_button.js';
+ import '../controls/settings_radio_group.js';
++import '../controls/settings_toggle_button.js';
+ import '../privacy_icons.html.js';
+ import '../settings_page/settings_subpage.js';
+ import '../settings_shared.css.js';
+@@ -15,8 +17,10 @@ import './settings_category_default_radio_group.js';
+ import './site_settings_shared.css.js';
+ 
+ import {PrefsMixin} from '/shared/settings/prefs/prefs_mixin.js';
++import {sendWithPromise} from 'chrome://resources/js/cr.js';
+ import {PolymerElement} from 'chrome://resources/polymer/v3_0/polymer/polymer_bundled.min.js';
+ 
++import type {SettingsToggleButtonElement} from '../controls/settings_toggle_button.js';
+ import {loadTimeData} from '../i18n_setup.js';
+ import {SettingsViewMixin} from '../settings_page/settings_view_mixin.js';
+ 
+@@ -26,6 +30,15 @@ import {getTemplate} from './protected_content_page.html.js';
+ const ProtectedContentPageElementBase =
+     SettingsViewMixin(PrefsMixin(PolymerElement));
+ 
++interface ZeniumWidevineState {
++  available: boolean;
++  enabled: boolean;
++  restartRequired: boolean;
++  status: 'copyFailed'|'disabled'|'enabled'|'incompatible'|'notFound'|
++      'removeFailed';
++  version: string;
++}
++
+ export class ProtectedContentPageElement extends
+     ProtectedContentPageElementBase {
+   static get is() {
+@@ -56,11 +69,120 @@ export class ProtectedContentPageElement extends
+         type: Object,
+         value: ContentSettingsTypes,
+       },
++
++      widevineBusy_: {
++        type: Boolean,
++        value: false,
++      },
++
++      widevinePref_: {
++        type: Object,
++        value: () => ({
++          key: '',
++          type: chrome.settingsPrivate.PrefType.BOOLEAN,
++          value: false,
++        }),
++      },
++
++      widevineRestartRequired_: {
++        type: Boolean,
++        value: false,
++      },
++
++      widevineState_: {
++        type: Object,
++        value: () => ({
++          available: false,
++          enabled: false,
++          restartRequired: false,
++          status: 'notFound',
++          version: '',
++        }),
++      },
+     };
+   }
+ 
+   declare searchTerm: string;
+   declare private isGuest_: boolean;
++  declare private widevineBusy_: boolean;
++  declare private widevinePref_: chrome.settingsPrivate.PrefObject<boolean>;
++  declare private widevineRestartRequired_: boolean;
++  declare private widevineState_: ZeniumWidevineState;
++
++  override ready() {
++    super.ready();
++    this.refreshWidevineState_();
++  }
++
++  private refreshWidevineState_() {
++    this.widevineBusy_ = true;
++    sendWithPromise<ZeniumWidevineState>('getZeniumWidevineState')
++        .then(state => this.setWidevineState_(state))
++        .catch(() => this.setWidevineErrorState_())
++        .finally(() => {
++          this.widevineBusy_ = false;
++        });
++  }
++
++  private setWidevineState_(state: ZeniumWidevineState) {
++    this.widevineState_ = state;
++    this.set('widevinePref_.value', state.enabled);
++    this.widevineRestartRequired_ =
++        this.widevineRestartRequired_ || state.restartRequired;
++  }
++
++  private setWidevineErrorState_() {
++    this.widevineState_ = {
++      available: false,
++      enabled: this.widevinePref_.value,
++      restartRequired: false,
++      status: 'copyFailed',
++      version: '',
++    };
++  }
++
++  private onWidevineToggleChange_(event: CustomEvent) {
++    const enabled = (event.target as SettingsToggleButtonElement).checked;
++    this.widevineBusy_ = true;
++    sendWithPromise<ZeniumWidevineState>('setZeniumWidevineEnabled', enabled)
++        .then(state => this.setWidevineState_(state))
++        .catch(() => this.setWidevineErrorState_())
++        .finally(() => {
++          this.widevineBusy_ = false;
++        });
++  }
++
++  private getWidevineDescription_(
++      state: ZeniumWidevineState, busy: boolean,
++      restartRequired: boolean): string {
++    if (busy) {
++      return loadTimeData.getString('zeniumWidevineBusy');
++    }
++    if (restartRequired) {
++      return loadTimeData.getString('zeniumWidevineRestartRequired');
++    }
++    switch (state.status) {
++      case 'enabled':
++        return loadTimeData.getStringF('zeniumWidevineEnabled', state.version);
++      case 'disabled':
++        return loadTimeData.getString('zeniumWidevineAvailable');
++      case 'notFound':
++        return loadTimeData.getString('zeniumWidevineNotFound');
++      case 'incompatible':
++        return loadTimeData.getString('zeniumWidevineIncompatible');
++      case 'removeFailed':
++        return loadTimeData.getString('zeniumWidevineRemoveFailed');
++      case 'copyFailed':
++        return loadTimeData.getString('zeniumWidevineCopyFailed');
++      default:
++        return loadTimeData.getString('zeniumWidevineCopyFailed');
++    }
++  }
++
++  private onWidevineRestartClick_(event: Event) {
++    event.stopPropagation();
++    chrome.send('restart');
++  }
+ 
+   // SettingsViewMixin implementation.
+   override focusBackButton() {
+diff --git a/chrome/browser/ui/BUILD.gn b/chrome/browser/ui/BUILD.gn
+index 8ded087d17860bf2544c78b252cc052665cc6458..8e560a979883683e27590bf0ca6bd04bb8f43f2b 100644
+--- a/chrome/browser/ui/BUILD.gn
++++ b/chrome/browser/ui/BUILD.gn
+@@ -3367,9 +3367,12 @@ static_library("ui") {
+       "//chrome/browser/ui/webui/signin:profile_impl",
+       "//chrome/browser/ui/webui/updater",
+       "//components/capture_mode",
++      "//components/cdm/common",
+       "//components/country_codes",
++      "//media/cdm:cdm_paths",
+       "//services/audio/public/mojom",
+       "//services/video_capture/public/mojom",
++      "//third_party/widevine/cdm:headers",
+     ]
+ 
+     # Any circular includes must depend on the target
+diff --git a/chrome/browser/ui/webui/settings/settings_localized_strings_provider.cc b/chrome/browser/ui/webui/settings/settings_localized_strings_provider.cc
+index 76d9851cedb212de61ea27fae446b8f48d9c1aa6..5fef9877bc82c5fd1ad8d5dd6542ff658a59ecbe 100644
+--- a/chrome/browser/ui/webui/settings/settings_localized_strings_provider.cc
++++ b/chrome/browser/ui/webui/settings/settings_localized_strings_provider.cc
+@@ -3377,6 +3377,19 @@ void AddSiteSettingsStrings(content::WebUIDataSource* html_source,
+        IDS_SITE_SETTINGS_TYPE_PROTECTED_MEDIA_ID},
+       {"siteSettingsProtectedContentDescription",
+        IDS_SETTINGS_SITE_SETTINGS_PROTECTED_CONTENT_DESCRIPTION},
++      {"zeniumWidevineTitle", IDS_SETTINGS_ZENIUM_WIDEVINE_TITLE},
++      {"zeniumWidevineAvailable", IDS_SETTINGS_ZENIUM_WIDEVINE_AVAILABLE},
++      {"zeniumWidevineEnabled", IDS_SETTINGS_ZENIUM_WIDEVINE_ENABLED},
++      {"zeniumWidevineBusy", IDS_SETTINGS_ZENIUM_WIDEVINE_BUSY},
++      {"zeniumWidevineNotFound", IDS_SETTINGS_ZENIUM_WIDEVINE_NOT_FOUND},
++      {"zeniumWidevineIncompatible",
++       IDS_SETTINGS_ZENIUM_WIDEVINE_INCOMPATIBLE},
++      {"zeniumWidevineCopyFailed",
++       IDS_SETTINGS_ZENIUM_WIDEVINE_COPY_FAILED},
++      {"zeniumWidevineRemoveFailed",
++       IDS_SETTINGS_ZENIUM_WIDEVINE_REMOVE_FAILED},
++      {"zeniumWidevineRestartRequired",
++       IDS_SETTINGS_ZENIUM_WIDEVINE_RESTART_REQUIRED},
+       {"siteSettingsProtectedContentAllowed",
+        IDS_SETTINGS_SITE_SETTINGS_PROTECTED_CONTENT_ALLOWED},
+       {"siteSettingsProtectedContentBlocked",
+diff --git a/chrome/browser/ui/webui/settings/system_handler.cc b/chrome/browser/ui/webui/settings/system_handler.cc
+index b781e81de7c04a83358d4faf4906e5ffa8213ee0..26f83e0830b6041ae486d26aa412330828e621f8 100644
+--- a/chrome/browser/ui/webui/settings/system_handler.cc
++++ b/chrome/browser/ui/webui/settings/system_handler.cc
+@@ -4,18 +4,452 @@
+ 
+ #include "chrome/browser/ui/webui/settings/system_handler.h"
+ 
++#include <atomic>
++#include <optional>
++#include <string>
++#include <vector>
++
++#include "base/base_paths.h"
++#include "base/files/file_enumerator.h"
++#include "base/files/file_path.h"
++#include "base/files/file_util.h"
++#include "base/files/scoped_temp_dir.h"
+ #include "base/functional/bind.h"
+ #include "base/functional/callback_helpers.h"
+ #include "base/metrics/user_metrics.h"
+ #include "base/metrics/user_metrics_action.h"
++#include "base/native_library.h"
++#include "base/path_service.h"
++#include "base/task/thread_pool.h"
++#include "base/version.h"
++#include "build/build_config.h"
+ #include "chrome/browser/browser_process.h"
+ #include "chrome/browser/gpu/gpu_mode_manager.h"
+ #include "chrome/browser/ui/webui/settings/settings_utils.h"
++#include "chrome/common/chrome_paths.h"
++#include "components/cdm/common/cdm_manifest.h"
+ #include "content/public/browser/web_ui.h"
+ #include "content/public/browser/web_ui_data_source.h"
++#include "media/base/cdm_capability.h"
++#include "media/cdm/cdm_paths.h"
++#include "third_party/widevine/cdm/widevine_cdm_common.h"
++
++#if BUILDFLAG(IS_LINUX)
++#include "chrome/common/media/component_widevine_cdm_hint_file_linux.h"
++#endif
++
++#if BUILDFLAG(IS_WIN)
++#include "base/base_paths_win.h"
++#endif
+ 
+ namespace settings {
+ 
++namespace {
++
++constexpr base::FilePath::CharType kZeniumWidevineMarker[] =
++    FILE_PATH_LITERAL("zenium-imported-from-chrome");
++
++constexpr char kStatusEnabled[] = "enabled";
++constexpr char kStatusDisabled[] = "disabled";
++constexpr char kStatusNotFound[] = "notFound";
++constexpr char kStatusIncompatible[] = "incompatible";
++constexpr char kStatusCopyFailed[] = "copyFailed";
++constexpr char kStatusRemoveFailed[] = "removeFailed";
++
++// This deliberately lives only for the lifetime of the browser process. A
++// successful relaunch clears it, while navigating away from Settings does not.
++std::atomic_bool g_widevine_restart_required = false;
++
++struct WidevineCandidate {
++  base::FilePath path;
++  base::FilePath library_path;
++  base::Version version;
++};
++
++void AddVersionDirectories(const base::FilePath& root,
++                           std::vector<base::FilePath>* candidates,
++                           bool* found_any) {
++  if (!base::DirectoryExists(root)) {
++    return;
++  }
++
++  *found_any = true;
++  base::FileEnumerator directories(root, false,
++                                   base::FileEnumerator::DIRECTORIES);
++  for (base::FilePath path = directories.Next(); !path.empty();
++       path = directories.Next()) {
++    candidates->push_back(path);
++  }
++}
++
++#if BUILDFLAG(IS_WIN)
++void AddApplicationVersionDirectories(const base::FilePath& application_root,
++                                      std::vector<base::FilePath>* candidates,
++                                      bool* found_any) {
++  if (!base::DirectoryExists(application_root)) {
++    return;
++  }
++
++  base::FileEnumerator versions(application_root, false,
++                                base::FileEnumerator::DIRECTORIES);
++  for (base::FilePath path = versions.Next(); !path.empty();
++       path = versions.Next()) {
++    const base::FilePath widevine = path.AppendASCII(kWidevineCdmBaseDirectory);
++    if (base::DirectoryExists(widevine)) {
++      *found_any = true;
++      candidates->push_back(widevine);
++    }
++  }
++}
++#endif
++
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC)
++void AddDirectCandidate(const base::FilePath& path,
++                        std::vector<base::FilePath>* candidates,
++                        bool* found_any) {
++  if (base::DirectoryExists(path)) {
++    *found_any = true;
++    candidates->push_back(path);
++  }
++}
++#endif
++
++std::vector<base::FilePath> GetChromeWidevineCandidates(bool* found_any) {
++  std::vector<base::FilePath> candidates;
++  *found_any = false;
++
++  base::FilePath chrome_user_data;
++  if (base::PathService::Get(chrome::DIR_CHROME_USER_DATA, &chrome_user_data)) {
++    AddVersionDirectories(
++        chrome_user_data.AppendASCII(kWidevineCdmBaseDirectory), &candidates,
++        found_any);
++
++#if BUILDFLAG(IS_LINUX)
++    for (const auto* channel : {
++             "google-chrome-beta",
++             "google-chrome-unstable",
++         }) {
++      AddVersionDirectories(
++          chrome_user_data.DirName().AppendASCII(channel).AppendASCII(
++              kWidevineCdmBaseDirectory),
++          &candidates, found_any);
++    }
++#elif BUILDFLAG(IS_MAC)
++    for (const auto* channel : {
++             "Chrome Beta",
++             "Chrome Canary",
++         }) {
++      AddVersionDirectories(
++          chrome_user_data.DirName().AppendASCII(channel).AppendASCII(
++              kWidevineCdmBaseDirectory),
++          &candidates, found_any);
++    }
++#elif BUILDFLAG(IS_WIN)
++    const base::FilePath google_data_root =
++        chrome_user_data.DirName().DirName();
++    for (const auto* channel : {
++             FILE_PATH_LITERAL("Chrome Beta"),
++             FILE_PATH_LITERAL("Chrome SxS"),
++         }) {
++      AddVersionDirectories(google_data_root.Append(channel)
++                                .Append(FILE_PATH_LITERAL("User Data"))
++                                .AppendASCII(kWidevineCdmBaseDirectory),
++                            &candidates, found_any);
++    }
++#endif
++  }
++
++#if BUILDFLAG(IS_LINUX)
++  for (const auto* path : {
++           "/opt/google/chrome/WidevineCdm",
++           "/opt/google/chrome-beta/WidevineCdm",
++           "/opt/google/chrome-unstable/WidevineCdm",
++       }) {
++    AddDirectCandidate(base::FilePath::FromUTF8Unsafe(path), &candidates,
++                       found_any);
++  }
++#elif BUILDFLAG(IS_MAC)
++  base::FilePath home;
++  base::PathService::Get(base::DIR_HOME, &home);
++  for (const auto* application : {
++           "Google Chrome.app",
++           "Google Chrome Beta.app",
++           "Google Chrome Canary.app",
++       }) {
++    const base::FilePath relative =
++        base::FilePath::FromUTF8Unsafe(application)
++            .Append("Contents")
++            .Append("Frameworks")
++            .Append("Google Chrome Framework.framework")
++            .Append("Versions")
++            .Append("Current")
++            .Append("Libraries")
++            .AppendASCII(kWidevineCdmBaseDirectory);
++    AddDirectCandidate(
++        base::FilePath(FILE_PATH_LITERAL("/Applications")).Append(relative),
++        &candidates, found_any);
++    if (!home.empty()) {
++      AddDirectCandidate(home.Append("Applications").Append(relative),
++                         &candidates, found_any);
++    }
++  }
++#elif BUILDFLAG(IS_WIN)
++  for (const int path_key : {
++           base::DIR_LOCAL_APP_DATA,
++           base::DIR_PROGRAM_FILES,
++           base::DIR_PROGRAM_FILESX86,
++       }) {
++    base::FilePath root;
++    if (!base::PathService::Get(path_key, &root)) {
++      continue;
++    }
++    for (const auto* product : {
++             FILE_PATH_LITERAL("Chrome"),
++             FILE_PATH_LITERAL("Chrome Beta"),
++             FILE_PATH_LITERAL("Chrome SxS"),
++         }) {
++      AddApplicationVersionDirectories(
++          root.Append(FILE_PATH_LITERAL("Google"))
++              .Append(product)
++              .Append(FILE_PATH_LITERAL("Application")),
++          &candidates, found_any);
++    }
++  }
++#endif
++
++  return candidates;
++}
++
++std::optional<WidevineCandidate> ValidateWidevineDirectory(
++    const base::FilePath& path) {
++  media::CdmCapability capability;
++  if (!ParseCdmManifestFromPath(path.Append(FILE_PATH_LITERAL("manifest.json")),
++                                &capability)) {
++    return std::nullopt;
++  }
++
++  const base::FilePath library_path =
++      media::GetPlatformSpecificDirectory(path).Append(
++          base::GetNativeLibraryName(kWidevineCdmLibraryName));
++  if (!base::PathExists(library_path)) {
++    return std::nullopt;
++  }
++
++  return WidevineCandidate{path, library_path, capability.version};
++}
++
++std::optional<WidevineCandidate> FindNewestCompatibleCandidate(
++    const std::vector<base::FilePath>& paths) {
++  std::optional<WidevineCandidate> newest;
++  for (const auto& path : paths) {
++    auto candidate = ValidateWidevineDirectory(path);
++    if (candidate && (!newest || candidate->version > newest->version)) {
++      newest = std::move(candidate);
++    }
++  }
++  return newest;
++}
++
++std::optional<WidevineCandidate> FindImportedWidevine(
++    base::FilePath* widevine_root) {
++  if (!base::PathService::Get(chrome::DIR_COMPONENT_UPDATED_WIDEVINE_CDM,
++                              widevine_root)) {
++    return std::nullopt;
++  }
++
++  std::vector<base::FilePath> imported_paths;
++  if (!base::DirectoryExists(*widevine_root)) {
++    return std::nullopt;
++  }
++
++  base::FileEnumerator directories(*widevine_root, false,
++                                   base::FileEnumerator::DIRECTORIES);
++  for (base::FilePath path = directories.Next(); !path.empty();
++       path = directories.Next()) {
++    if (base::PathExists(path.Append(kZeniumWidevineMarker))) {
++      imported_paths.push_back(path);
++    }
++  }
++  return FindNewestCompatibleCandidate(imported_paths);
++}
++
++base::DictValue GetZeniumWidevineState() {
++  base::FilePath widevine_root;
++  auto imported = FindImportedWidevine(&widevine_root);
++
++  bool found_chrome_widevine = false;
++  auto chrome_widevine = FindNewestCompatibleCandidate(
++      GetChromeWidevineCandidates(&found_chrome_widevine));
++
++  base::DictValue state;
++  state.Set("enabled", imported.has_value());
++  state.Set("available", chrome_widevine.has_value());
++  state.Set("restartRequired", g_widevine_restart_required.load());
++  state.Set("version", imported ? imported->version.GetString() : "");
++
++  if (imported) {
++    state.Set("status", kStatusEnabled);
++  } else if (chrome_widevine) {
++    state.Set("status", kStatusDisabled);
++  } else if (found_chrome_widevine) {
++    state.Set("status", kStatusIncompatible);
++  } else {
++    state.Set("status", kStatusNotFound);
++  }
++  return state;
++}
++
++base::DictValue EnableZeniumWidevine() {
++  bool found_any = false;
++  auto source =
++      FindNewestCompatibleCandidate(GetChromeWidevineCandidates(&found_any));
++  if (!source) {
++    return GetZeniumWidevineState();
++  }
++
++  base::FilePath widevine_root;
++  if (!base::PathService::Get(chrome::DIR_COMPONENT_UPDATED_WIDEVINE_CDM,
++                              &widevine_root)) {
++    auto state = GetZeniumWidevineState();
++    state.Set("status", kStatusCopyFailed);
++    return state;
++  }
++
++  const base::FilePath install_dir =
++      widevine_root.AppendASCII(source->version.GetString());
++
++  if (!base::CreateDirectory(widevine_root)) {
++    auto state = GetZeniumWidevineState();
++    state.Set("status", kStatusCopyFailed);
++    return state;
++  }
++
++  // Build the new installation out of sight of component discovery. This
++  // prevents a failed or interrupted import from leaving a loadable partial
++  // component behind.
++  base::ScopedTempDir staging_dir;
++  if (!staging_dir.CreateUniqueTempDirUnderPath(
++          widevine_root, FILE_PATH_LITERAL(".zenium-widevine-"))) {
++    auto state = GetZeniumWidevineState();
++    state.Set("status", kStatusCopyFailed);
++    return state;
++  }
++
++  const base::FilePath staged_install_dir = staging_dir.GetPath();
++  const base::FilePath destination_library =
++      media::GetPlatformSpecificDirectory(staged_install_dir)
++          .Append(base::GetNativeLibraryName(kWidevineCdmLibraryName));
++  if (!base::CreateDirectory(destination_library.DirName()) ||
++      !base::CopyFile(
++          source->path.Append(FILE_PATH_LITERAL("manifest.json")),
++          staged_install_dir.Append(FILE_PATH_LITERAL("manifest.json"))) ||
++      !base::CopyFile(source->library_path, destination_library)) {
++    auto state = GetZeniumWidevineState();
++    state.Set("status", kStatusCopyFailed);
++    return state;
++  }
++
++  const base::FilePath source_license =
++      source->path.Append(FILE_PATH_LITERAL("LICENSE"));
++  if (base::PathExists(source_license)) {
++    base::CopyFile(source_license,
++                   staged_install_dir.Append(FILE_PATH_LITERAL("LICENSE")));
++  }
++
++  if (!ValidateWidevineDirectory(staged_install_dir) ||
++      !base::WriteFile(staged_install_dir.Append(kZeniumWidevineMarker),
++                       "Imported by Zenium\n")) {
++    auto state = GetZeniumWidevineState();
++    state.Set("status", kStatusCopyFailed);
++    return state;
++  }
++
++  // Never replace a component that Zenium does not own. It may have been
++  // installed by another component mechanism and disabling this setting must
++  // not remove it.
++  if (base::PathExists(install_dir)) {
++    if (!base::PathExists(install_dir.Append(kZeniumWidevineMarker)) ||
++        !base::DeletePathRecursively(install_dir)) {
++      auto state = GetZeniumWidevineState();
++      state.Set("status", kStatusCopyFailed);
++      return state;
++    }
++  }
++
++  if (!base::Move(staged_install_dir, install_dir)) {
++    auto state = GetZeniumWidevineState();
++    state.Set("status", kStatusCopyFailed);
++    return state;
++  }
++  staging_dir.Take();
++
++#if BUILDFLAG(IS_LINUX)
++  if (!UpdateWidevineCdmHintFile(install_dir, std::nullopt)) {
++    base::DeletePathRecursively(install_dir);
++    auto state = GetZeniumWidevineState();
++    state.Set("status", kStatusCopyFailed);
++    return state;
++  }
++#endif
++
++  g_widevine_restart_required.store(true);
++  return GetZeniumWidevineState();
++}
++
++base::DictValue DisableZeniumWidevine() {
++  base::FilePath widevine_root;
++  FindImportedWidevine(&widevine_root);
++  if (widevine_root.empty() || !base::DirectoryExists(widevine_root)) {
++    return GetZeniumWidevineState();
++  }
++
++  std::vector<base::FilePath> imported_paths;
++  base::FileEnumerator directories(widevine_root, false,
++                                   base::FileEnumerator::DIRECTORIES);
++  for (base::FilePath path = directories.Next(); !path.empty();
++       path = directories.Next()) {
++    if (base::PathExists(path.Append(kZeniumWidevineMarker))) {
++      imported_paths.push_back(path);
++    }
++  }
++
++#if BUILDFLAG(IS_LINUX)
++  base::FilePath hinted_path = GetHintedWidevineCdmDirectory();
++  for (const auto& imported_path : imported_paths) {
++    if (hinted_path == imported_path) {
++      base::FilePath hint_file;
++      if (base::PathService::Get(chrome::FILE_COMPONENT_WIDEVINE_CDM_HINT,
++                                 &hint_file)) {
++        base::DeleteFile(hint_file);
++      }
++      break;
++    }
++  }
++#endif
++
++  bool success = true;
++  for (const auto& path : imported_paths) {
++    if (!widevine_root.IsParent(path) || !base::DeletePathRecursively(path)) {
++      success = false;
++    }
++  }
++
++  if (!imported_paths.empty()) {
++    g_widevine_restart_required.store(true);
++  }
++  auto state = GetZeniumWidevineState();
++  if (!success) {
++    state.Set("status", kStatusRemoveFailed);
++  }
++  return state;
++}
++
++base::DictValue SetZeniumWidevineEnabled(bool enabled) {
++  return enabled ? EnableZeniumWidevine() : DisableZeniumWidevine();
++}
++
++}  // namespace
++
+ SystemHandler::SystemHandler() = default;
+ 
+ SystemHandler::~SystemHandler() = default;
+@@ -32,6 +466,14 @@ void SystemHandler::RegisterMessages() {
+       "showProxySettings",
+       base::BindRepeating(&SystemHandler::HandleShowProxySettings,
+                           base::Unretained(this)));
++  web_ui()->RegisterMessageCallback(
++      "getZeniumWidevineState",
++      base::BindRepeating(&SystemHandler::HandleGetZeniumWidevineState,
++                          base::Unretained(this)));
++  web_ui()->RegisterMessageCallback(
++      "setZeniumWidevineEnabled",
++      base::BindRepeating(&SystemHandler::HandleSetZeniumWidevineEnabled,
++                          base::Unretained(this)));
+ }
+ 
+ void SystemHandler::HandleShowProxySettings(const base::ListValue& args) {
+@@ -39,4 +481,33 @@ void SystemHandler::HandleShowProxySettings(const base::ListValue& args) {
+   settings_utils::ShowNetworkProxySettings(web_ui()->GetWebContents());
+ }
+ 
++void SystemHandler::HandleGetZeniumWidevineState(const base::ListValue& args) {
++  AllowJavascript();
++  CHECK_EQ(args.size(), 1u);
++  base::ThreadPool::PostTaskAndReplyWithResult(
++      FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_VISIBLE},
++      base::BindOnce(&GetZeniumWidevineState),
++      base::BindOnce(&SystemHandler::OnZeniumWidevineStateReady,
++                     weak_ptr_factory_.GetWeakPtr(), args[0].Clone()));
++}
++
++void SystemHandler::HandleSetZeniumWidevineEnabled(
++    const base::ListValue& args) {
++  AllowJavascript();
++  CHECK_EQ(args.size(), 2u);
++  CHECK(args[1].is_bool());
++  base::ThreadPool::PostTaskAndReplyWithResult(
++      FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_VISIBLE},
++      base::BindOnce(&SetZeniumWidevineEnabled, args[1].GetBool()),
++      base::BindOnce(&SystemHandler::OnZeniumWidevineStateReady,
++                     weak_ptr_factory_.GetWeakPtr(), args[0].Clone()));
++}
++
++void SystemHandler::OnZeniumWidevineStateReady(base::Value callback_id,
++                                               base::DictValue state) {
++  if (IsJavascriptAllowed()) {
++    ResolveJavascriptCallback(callback_id, std::move(state));
++  }
++}
++
+ }  // namespace settings
+diff --git a/chrome/browser/ui/webui/settings/system_handler.h b/chrome/browser/ui/webui/settings/system_handler.h
+index 7a7cc8844e8f53ec7d34850c602fd54c702bf099..1e604dfe4e44e153e474b13ed1602ff69e6468bf 100644
+--- a/chrome/browser/ui/webui/settings/system_handler.h
++++ b/chrome/browser/ui/webui/settings/system_handler.h
+@@ -5,6 +5,7 @@
+ #ifndef CHROME_BROWSER_UI_WEBUI_SETTINGS_SYSTEM_HANDLER_H_
+ #define CHROME_BROWSER_UI_WEBUI_SETTINGS_SYSTEM_HANDLER_H_
+ 
++#include "base/memory/weak_ptr.h"
+ #include "chrome/browser/ui/webui/settings/settings_page_ui_handler.h"
+ 
+ namespace content {
+@@ -33,6 +34,12 @@ class SystemHandler : public SettingsPageUIHandler {
+  private:
+   // Handler for the "showProxySettings" message. No args.
+   void HandleShowProxySettings(const base::ListValue& args);
++  void HandleGetZeniumWidevineState(const base::ListValue& args);
++  void HandleSetZeniumWidevineEnabled(const base::ListValue& args);
++  void OnZeniumWidevineStateReady(base::Value callback_id,
++                                  base::DictValue state);
++
++  base::WeakPtrFactory<SystemHandler> weak_ptr_factory_{this};
+ };
+ 
+ }  // namespace settings

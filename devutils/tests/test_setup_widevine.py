@@ -54,6 +54,8 @@ def test_install_widevine(tmp_path):
     assert (install_dir / 'LICENSE').read_text(encoding='utf-8') == 'test license'
     assert (install_dir / '_platform_specific' / 'linux_x64' /
             'libwidevinecdm.so').read_bytes() == b'test-widevine-library'
+    assert (install_dir / setup_widevine.ZENIUM_IMPORT_MARKER).read_text(
+        encoding='utf-8') == 'Imported by Zenium\n'
     hint_path = user_data_dir / 'WidevineCdm' / 'latest-component-updated-widevine-cdm'
     assert json.loads(hint_path.read_text(encoding='utf-8')) == {'Path': str(install_dir)}
 

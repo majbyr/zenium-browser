@@ -27,6 +27,8 @@ PLATFORM_DIRECTORIES = {
     'x86_64': 'linux_x64',
 }
 
+ZENIUM_IMPORT_MARKER = 'zenium-imported-from-chrome'
+
 
 def default_user_data_dir():
     """Returns Zenium's default Linux user data directory."""
@@ -118,6 +120,22 @@ def atomic_write_json(destination, value):
         temporary_path.unlink(missing_ok=True)
 
 
+def atomic_write_text(destination, value):
+    """Writes text without exposing a partially written destination."""
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    file_descriptor, temporary_name = tempfile.mkstemp(prefix=f'.{destination.name}.',
+                                                       dir=destination.parent,
+                                                       text=True)
+    temporary_path = Path(temporary_name)
+    try:
+        with os.fdopen(file_descriptor, 'w', encoding='utf-8') as output:
+            output.write(value)
+        os.chmod(temporary_path, 0o644)
+        temporary_path.replace(destination)
+    finally:
+        temporary_path.unlink(missing_ok=True)
+
+
 def install_widevine(source_dir, user_data_dir, machine=None):
     """Copies Chrome's Widevine files and returns the installed CDM path."""
     source_dir = source_dir.expanduser().resolve()
@@ -137,6 +155,8 @@ def install_widevine(source_dir, user_data_dir, machine=None):
     license_path = source_dir / 'LICENSE'
     if license_path.is_file():
         atomic_copy(license_path, install_dir / 'LICENSE')
+
+    atomic_write_text(install_dir / ZENIUM_IMPORT_MARKER, 'Imported by Zenium\n')
 
     hint_path = widevine_dir / 'latest-component-updated-widevine-cdm'
     atomic_write_json(hint_path, {'Path': str(install_dir)})
