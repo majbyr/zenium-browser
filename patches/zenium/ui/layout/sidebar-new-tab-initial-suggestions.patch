@@ -1,0 +1,77 @@
+diff --git a/chrome/browser/ui/omnibox/chrome_omnibox_client.cc b/chrome/browser/ui/omnibox/chrome_omnibox_client.cc
+--- a/chrome/browser/ui/omnibox/chrome_omnibox_client.cc
++++ b/chrome/browser/ui/omnibox/chrome_omnibox_client.cc
+@@ -214,6 +214,16 @@ bool ChromeOmniboxClient::CurrentPageExists() const {
+ }
+ 
+ const GURL& ChromeOmniboxClient::GetURL() const {
++  if (browser_) {
++    BrowserView* browser_view =
++        BrowserView::GetBrowserViewForBrowser(browser_);
++    if (browser_view && browser_view->IsZeniumNewTabOmniboxActive()) {
++      // The centered New Tab palette is not editing the active tab. Keep its
++      // zero-prefix request independent of chrome://newtab so local
++      // most-visited suggestions are eligible on the very first invocation.
++      return GURL::EmptyGURL();
++    }
++  }
+   return CurrentPageExists() ? location_bar_->GetWebContents()->GetVisibleURL()
+                              : GURL::EmptyGURL();
+ }
+@@ -440,6 +450,17 @@ GURL ChromeOmniboxClient::GetContextualTasksInnerFrameURL() const {
+ 
+ metrics::OmniboxEventProto::PageClassification
+ ChromeOmniboxClient::GetPageClassification(bool is_prefetch) const {
++  if (browser_) {
++    BrowserView* browser_view =
++        BrowserView::GetBrowserViewForBrowser(browser_);
++    if (browser_view && browser_view->IsZeniumNewTabOmniboxActive()) {
++      // This is a browser-owned navigation surface rather than the NTP's
++      // inline omnibox. OTHER enables the desktop on-focus URL provider;
++      // NTP classifications intentionally suppress that provider upstream.
++      return is_prefetch ? metrics::OmniboxEventProto::OTHER_ZPS_PREFETCH
++                         : metrics::OmniboxEventProto::OTHER;
++    }
++  }
+   return location_bar_->GetLocationBarModel()->GetPageClassification(
+       is_prefetch);
+ }
+diff --git a/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.cc b/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.cc
+--- a/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.cc
++++ b/chrome/browser/ui/views/omnibox/omnibox_popup_full_presenter.cc
+@@ -290,7 +290,14 @@ void OmniboxPopupFullPresenter::SynchronizePopupBounds() {
+   }
+ 
+   const int default_height = widget_bounds.height();
+-  bool has_results = content_height_ > default_height;
++  // The WebUI input includes a few pixels that the native location-bar bounds
++  // do not, so a simple `content_height_ > default_height` misclassifies the
++  // empty palette as a result list. Prefer the autocomplete model and retain a
++  // content-height fallback for the short interval where WebUI is displaying
++  // its cached zero-prefix rows while a replacement request is in flight.
++  const bool has_results =
++      !controller()->autocomplete_controller()->result().empty() ||
++      content_height_ > default_height + 24;
+   int target_elevation =
+       has_results ? RoundedOmniboxResultsFrame::kDefaultElevation : 0;
+ 
+@@ -313,11 +320,18 @@ void OmniboxPopupFullPresenter::SynchronizePopupBounds() {
+   if (is_centered_new_tab) {
+     const gfx::Rect window_bounds =
+         browser_view->GetWidgetForAnchoring()->GetWindowBoundsInScreen();
++    // Keep the input at Zen's stable palette position while results are
++    // visible, but center a genuinely input-only surface by its real height.
++    // The latter prevents an empty first-run palette from floating above the
++    // middle of the content area as though five invisible rows existed.
++    const int vertical_reference_height =
++        has_results ? kZeniumCenteredPopupNominalHeight
++                    : widget_bounds.height();
+     const int stable_y =
+         window_bounds.y() +
+         std::max(
+             kZeniumPopupWindowMargin,
+-            (window_bounds.height() - kZeniumCenteredPopupNominalHeight) / 2);
++            (window_bounds.height() - vertical_reference_height) / 2);
+     // Never derive the top edge from the current result count. Moving a
+     // translucent child Widget while its renderer is committing a resized
+     // surface can temporarily leave Wayland's visible surface and input region
