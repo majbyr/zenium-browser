@@ -1,0 +1,373 @@
+diff --git a/chrome/browser/ui/views/tabs/common/tab_strip_view.cc b/chrome/browser/ui/views/tabs/common/tab_strip_view.cc
+--- a/chrome/browser/ui/views/tabs/common/tab_strip_view.cc
++++ b/chrome/browser/ui/views/tabs/common/tab_strip_view.cc
+@@ -22,6 +22,7 @@
+ #include "chrome/browser/ui/views/tabs/common/tab_strip_utils.h"
+ #include "chrome/browser/ui/views/tabs/common/unpinned_tab_container_view.h"
+ #include "chrome/browser/ui/views/tabs/hovercard/tab_hover_card_controller.h"
++#include "chrome/browser/ui/views/tabs/vertical/vertical_new_tab_button.h"
+ #include "chrome/browser/ui/views/tabs/vertical/vertical_tab_strip_scroll_bar.h"
+ #include "components/tabs/public/tab_group.h"
+ #include "ui/base/metadata/metadata_impl_macros.h"
+@@ -159,15 +160,22 @@ views::ProposedLayout TabStripView::CalculateProposedLayout(
+           .height();
+   const int unpinned_preferred_height =
+       unpinned_tabs_scroll_view_->GetPreferredSize(size_bounds).height();
++  const int new_tab_button_height =
++      new_tab_button_ ? new_tab_button_->GetPreferredSize().height() : 0;
++  constexpr int kNewTabButtonGap = 5;
+
+   // If the height is bounded, calculate the available space for laying out the
+   // pinned and unpinned containers.
+   int remaining_height = 0;
+   if (size_bounds.height().is_bounded()) {
+     remaining_height = size_bounds.height().value();
+-    if (pinned_preferred_height != 0 && unpinned_preferred_height != 0) {
++    remaining_height -= new_tab_button_height;
++    if (pinned_preferred_height != 0 && new_tab_button_height != 0) {
+       remaining_height -= region_vertical_padding;
+     }
++    if (new_tab_button_height != 0 && unpinned_preferred_height != 0) {
++      remaining_height -= kNewTabButtonGap;
++    }
+     // Clamp the remaining height to 0 if we have less space.
+     remaining_height = std::max(remaining_height, 0);
+   }
+@@ -195,12 +203,28 @@ views::ProposedLayout TabStripView::CalculateProposedLayout(
+
+   if (pinned_container_bounds.height()) {
+     y += pinned_container_bounds.height();
+-    // Add padding only if there are pinned and unpinned tabs.
+-    if (unpinned_preferred_height != 0) {
++    if (new_tab_button_height != 0) {
+       y += region_vertical_padding;
+     }
+   }
+
++  // Zen places New Tab between the pinned collection and the unpinned list.
++  // Keeping it in this layout also prevents Space filtering from leaving it
++  // below the list or moving it when another Space has more tabs.
++  if (new_tab_button_) {
++    gfx::Rect new_tab_button_bounds(
++        region_horizontal_padding, y,
++        size_bounds.width().value() - (2 * region_horizontal_padding),
++        new_tab_button_height);
++    layouts.child_layouts.emplace_back(new_tab_button_.get(),
++                                       new_tab_button_->GetVisible(),
++                                       new_tab_button_bounds);
++    y = new_tab_button_bounds.bottom();
++    if (unpinned_preferred_height != 0) {
++      y += kNewTabButtonGap;
++    }
++  }
++
+   // Place the unpinned container using the entire available width, we do not
+   // inset the x value by |region_horizontal_padding| here because, when the tab
+   // strip is collapsed, tab groups need to draw the group colored line in this
+@@ -402,6 +426,14 @@ void TabStripView::SetIsAnimatingSize(bool is_animating) {
+   }
+ }
+
++void TabStripView::SetNewTabButton(
++    std::unique_ptr<VerticalNewTabButton> button) {
++  CHECK(button);
++  CHECK(!new_tab_button_);
++  new_tab_button_ = AddChildViewAt(std::move(button), 1);
++  InvalidateLayout();
++}
++
+ void TabStripView::SetZeniumSpaceController(
+     tabs::ZeniumSpaceController* space_controller) {
+   space_changed_subscription_ = {};
+@@ -427,7 +459,25 @@ void TabStripView::UpdateZeniumSpaceVisibility() {
+     tabs::TabInterface* tab = model->GetTabAtIndex(index);
+     if (TabCollectionNode* node =
+             collection_node_->GetNodeForHandle(tab->GetHandle())) {
+-      node->view()->SetVisible(space_controller_->IsTabVisible(tab));
++      views::View* view = node->view();
++      const bool should_show = space_controller_->IsTabVisible(tab);
++      const bool was_space_hidden =
++          view->GetProperty(views::kViewIgnoredByLayoutKey);
++      view->SetProperty(views::kViewIgnoredByLayoutKey, !should_show);
++      if (!should_show) {
++        view->SetVisible(false);
++      } else if (was_space_hidden) {
++        bool inside_collapsed_group = false;
++        for (views::View* ancestor = view->parent(); ancestor;
++             ancestor = ancestor->parent()) {
++          if (auto* group = views::AsViewClass<TabGroupView>(ancestor);
++              group && group->IsCollapsed()) {
++            inside_collapsed_group = true;
++            break;
++          }
++        }
++        view->SetVisible(!inside_collapsed_group);
++      }
+     }
+   }
+
+@@ -438,7 +488,7 @@ void TabStripView::UpdateZeniumSpaceVisibility() {
+
+ bool TabStripView::UpdateNodeVisibility(TabCollectionNode* node) {
+   if (node->type() == TabCollectionNode::Type::TAB) {
+-    return node->view()->GetVisible();
++    return !node->view()->GetProperty(views::kViewIgnoredByLayoutKey);
+   }
+
+   bool any_child_visible = false;
+@@ -448,7 +498,15 @@ bool TabStripView::UpdateNodeVisibility(TabCollectionNode* node) {
+
+   if (node != collection_node_ &&
+       node->type() != TabCollectionNode::Type::PINNED) {
+-    node->view()->SetVisible(any_child_visible);
++    views::View* view = node->view();
++    const bool was_space_hidden =
++        view->GetProperty(views::kViewIgnoredByLayoutKey);
++    view->SetProperty(views::kViewIgnoredByLayoutKey, !any_child_visible);
++    if (!any_child_visible) {
++      view->SetVisible(false);
++    } else if (was_space_hidden) {
++      view->SetVisible(true);
++    }
+   }
+   return any_child_visible;
+ }
+@@ -467,7 +525,7 @@ bool TabStripView::IsPositionInWindowCaption(const gfx::Point& point) {
+
+     auto* scroll_view = views::AsViewClass<views::ScrollView>(child);
+     if (!scroll_view) {
+-      return true;
++      return child != new_tab_button_;
+     }
+
+     if (scroll_view->vertical_scroll_bar()->GetVisible()) {
+diff --git a/chrome/browser/ui/views/tabs/common/tab_strip_view.h b/chrome/browser/ui/views/tabs/common/tab_strip_view.h
+--- a/chrome/browser/ui/views/tabs/common/tab_strip_view.h
++++ b/chrome/browser/ui/views/tabs/common/tab_strip_view.h
+@@ -16,6 +16,7 @@
+ class TabCollectionNode;
+ class PinnedTabContainerView;
+ class UnpinnedTabContainerView;
++class VerticalNewTabButton;
+
+ namespace tabs {
+ class ZeniumSpaceController;
+@@ -54,6 +55,7 @@ class TabStripView final : public views::View,
+
+   void SetCollapsedState(bool is_collapsed);
+   void SetIsAnimatingSize(bool is_animating);
++  void SetNewTabButton(std::unique_ptr<VerticalNewTabButton> button);
+   void SetZeniumSpaceController(
+       tabs::ZeniumSpaceController* space_controller);
+   void UpdateZeniumSpaceVisibility();
+@@ -110,6 +112,7 @@ class TabStripView final : public views::View,
+   raw_ptr<views::ScrollView> pinned_tabs_scroll_view_ = nullptr;
+   raw_ptr<PinnedTabContainerView> pinned_tabs_container_view_ = nullptr;
+   raw_ptr<views::Separator> tabs_separator_ = nullptr;
++  raw_ptr<VerticalNewTabButton> new_tab_button_ = nullptr;
+   raw_ptr<views::ScrollView> unpinned_tabs_scroll_view_ = nullptr;
+   raw_ptr<UnpinnedTabContainerView> unpinned_tabs_container_view_ = nullptr;
+   raw_ptr<tabs::ZeniumSpaceController> space_controller_ = nullptr;
+diff --git a/chrome/browser/ui/views/tabs/common/unpinned_tab_container_view.cc b/chrome/browser/ui/views/tabs/common/unpinned_tab_container_view.cc
+--- a/chrome/browser/ui/views/tabs/common/unpinned_tab_container_view.cc
++++ b/chrome/browser/ui/views/tabs/common/unpinned_tab_container_view.cc
+@@ -4,6 +4,8 @@
+
+ #include "chrome/browser/ui/views/tabs/common/unpinned_tab_container_view.h"
+
++#include <algorithm>
++
+ #include "chrome/browser/ui/layout_constants.h"
+ #include "chrome/browser/ui/views/tabs/common/dragged_tabs_container.h"
+ #include "chrome/browser/ui/views/tabs/common/split_tab_view.h"
+@@ -119,6 +121,9 @@ views::ProposedLayout UnpinnedTabContainerView::CalculateProposedLayout(
+   // Layout children in order. Children will have their preferred height and
+   // fill available width.
+   for (auto* child : children) {
++    if (child->GetProperty(views::kViewIgnoredByLayoutKey)) {
++      continue;
++    }
+     // The leading inset should not be applied for tab groups when the tab strip
+     // is collapsed since the group color line is drawn in that space.
+     int x =
+@@ -149,7 +154,7 @@ views::ProposedLayout UnpinnedTabContainerView::CalculateProposedLayout(
+     width = std::max(width, bounds.width() + bounds.x());
+   }
+   // Remove excess padding if needed.
+-  if (!children.empty()) {
++  if (height > 0) {
+     height -= kTabVerticalPadding;
+   }
+
+@@ -175,7 +180,10 @@ gfx::Size UnpinnedTabContainerView::GetMinimumSize() const {
+   }
+
+   // The minimum size should be enough to show a tab and a half, if needed.
+-  const int num_children = collection_node_->GetDirectChildren().size();
++  const int num_children = std::ranges::count_if(
++      collection_node_->GetDirectChildren(), [](const views::View* child) {
++        return !child->GetProperty(views::kViewIgnoredByLayoutKey);
++      });
+   const int min_height =
+       base::ClampCeil(GetLayoutConstant(LayoutConstant::kVerticalTabHeight) *
+                       std::min(1.5f, static_cast<float>(num_children))) +
+@@ -192,6 +200,9 @@ UnpinnedTabContainerView::GetLinkDropIndex(const gfx::Point& loc_in_container) {
+   for (auto& child_node : collection_node_->children()) {
+     auto* view = child_node->view();
+     CHECK(view);
++    if (view->GetProperty(views::kViewIgnoredByLayoutKey)) {
++      continue;
++    }
+     if (loc_in_container.y() >= view->bounds().bottom()) {
+       continue;
+     }
+diff --git a/chrome/browser/ui/views/tabs/common/split_tab_view.cc b/chrome/browser/ui/views/tabs/common/split_tab_view.cc
+--- a/chrome/browser/ui/views/tabs/common/split_tab_view.cc
++++ b/chrome/browser/ui/views/tabs/common/split_tab_view.cc
+@@ -4,6 +4,7 @@
+
+ #include "chrome/browser/ui/views/tabs/common/split_tab_view.h"
+
++#include <algorithm>
+ #include <vector>
+
+ #include "chrome/browser/ui/color/chrome_color_id.h"
+@@ -120,9 +121,21 @@ views::ProposedLayout SplitTabView::CalculateProposedLayout(
+   int width = 0;
+   int height = 0;
+
+-  const std::vector<views::View*> children =
++  std::vector<views::View*> children =
+       collection_node_ ? collection_node_->GetDirectChildren()
+                        : std::vector<views::View*>();
++  std::erase_if(children, [](const views::View* child) {
++    return child->GetProperty(views::kViewIgnoredByLayoutKey);
++  });
++  if (children.size() == 1) {
++    gfx::Rect bounds(children.front()->GetPreferredSize(size_bounds));
++    if (size_bounds.width().is_bounded()) {
++      bounds.set_width(size_bounds.width().value());
++    }
++    layouts.child_layouts.emplace_back(children.front(), true, bounds);
++    layouts.host_size = bounds.size();
++    return layouts;
++  }
+   if (children.size() != 2) {
+     layouts.host_size = gfx::Size(0, 0);
+     return layouts;
+diff --git a/chrome/browser/ui/views/tabs/common/tab_group_view.cc b/chrome/browser/ui/views/tabs/common/tab_group_view.cc
+--- a/chrome/browser/ui/views/tabs/common/tab_group_view.cc
++++ b/chrome/browser/ui/views/tabs/common/tab_group_view.cc
+@@ -162,7 +162,12 @@ views::ProposedLayout TabGroupView::CalculateProposedLayout(
+
+   // Layout children in order. Children will have their preferred height and
+   // fill available width.
++  bool has_visible_children = false;
+   for (auto* child : children) {
++    if (child->GetProperty(views::kViewIgnoredByLayoutKey)) {
++      continue;
++    }
++    has_visible_children = true;
+     gfx::Rect bounds = gfx::Rect(child->GetPreferredSize(size_bounds));
+
+     auto drag_data = GetVisualDataForDraggedView(*child);
+@@ -185,9 +190,11 @@ views::ProposedLayout TabGroupView::CalculateProposedLayout(
+     width = std::max(width, bounds.width());
+   }
+   // Remove excess padding.
+-  height -= kTabVerticalPadding;
++  if (has_visible_children) {
++    height -= kTabVerticalPadding;
++  }
+
+-  if (!children.empty()) {
++  if (has_visible_children) {
+     group_line_bounds.set_height(height - group_line_bounds.y());
+   }
+   layouts.child_layouts.emplace_back(
+@@ -349,7 +356,8 @@ void TabGroupView::UpdateChildVisibilityForCollapseState(bool collapsed) {
+   }
+   group_line_->SetVisible(!collapsed);
+   for (auto* child : collection_node_->GetDirectChildren()) {
+-    child->SetVisible(!collapsed);
++    child->SetVisible(
++        !collapsed && !child->GetProperty(views::kViewIgnoredByLayoutKey));
+   }
+ }
+
+diff --git a/chrome/browser/ui/views/tabs/vertical/vertical_tab_strip_bottom_container.cc b/chrome/browser/ui/views/tabs/vertical/vertical_tab_strip_bottom_container.cc
+--- a/chrome/browser/ui/views/tabs/vertical/vertical_tab_strip_bottom_container.cc
++++ b/chrome/browser/ui/views/tabs/vertical/vertical_tab_strip_bottom_container.cc
+@@ -4,6 +4,8 @@
+
+ #include "chrome/browser/ui/views/tabs/vertical/vertical_tab_strip_bottom_container.h"
+
++#include <utility>
++
+ #include "base/functional/bind.h"
+ #include "chrome/app/vector_icons/vector_icons.h"
+ #include "chrome/browser/ui/browser_commands.h"
+@@ -116,6 +118,11 @@ VerticalTabStripBottomContainer::VerticalTabStripBottomContainer(
+
+ VerticalTabStripBottomContainer::~VerticalTabStripBottomContainer() = default;
+
++std::unique_ptr<VerticalNewTabButton>
++VerticalTabStripBottomContainer::TakeNewTabButton() {
++  return RemoveChildViewT(std::exchange(new_tab_button_, nullptr));
++}
++
+ void VerticalTabStripBottomContainer::ClearSpaceController() {
+   space_switcher_->ClearController();
+ }
+@@ -188,12 +195,14 @@ void VerticalTabStripBottomContainer::UpdateButtonStyles(bool collapsed) {
+   footer_row_->SetCrossAxisAlignment(views::LayoutAlignment::kCenter);
+   space_switcher_->SetCollapsed(collapsed);
+
+-  new_tab_button_->SetProperty(
+-      views::kFlexBehaviorKey,
+-      views::FlexSpecification(views::LayoutOrientation::kVertical,
+-                               views::MinimumFlexSizeRule::kPreferred,
+-                               views::MaximumFlexSizeRule::kPreferred, false,
+-                               views::MinimumFlexSizeRule::kPreferred));
++  if (new_tab_button_) {
++    new_tab_button_->SetProperty(
++        views::kFlexBehaviorKey,
++        views::FlexSpecification(views::LayoutOrientation::kVertical,
++                                 views::MinimumFlexSizeRule::kPreferred,
++                                 views::MaximumFlexSizeRule::kPreferred, false,
++                                 views::MinimumFlexSizeRule::kPreferred));
++  }
+ }
+
+ BEGIN_METADATA(VerticalTabStripBottomContainer)
+diff --git a/chrome/browser/ui/views/tabs/vertical/vertical_tab_strip_bottom_container.h b/chrome/browser/ui/views/tabs/vertical/vertical_tab_strip_bottom_container.h
+--- a/chrome/browser/ui/views/tabs/vertical/vertical_tab_strip_bottom_container.h
++++ b/chrome/browser/ui/views/tabs/vertical/vertical_tab_strip_bottom_container.h
+@@ -47,6 +47,7 @@ class VerticalTabStripBottomContainer : public views::FlexLayoutView,
+   void OnCollapseStateChanged(tabs::VerticalTabStripCollapseState state);
+
+   ToolbarButton* downloads_button() const { return downloads_button_; }
++  std::unique_ptr<VerticalNewTabButton> TakeNewTabButton();
+   void ClearSpaceController();
+
+   // views::ContextMenuController:
+diff --git a/chrome/browser/ui/views/frame/vertical_tab_strip_region_view.cc b/chrome/browser/ui/views/frame/vertical_tab_strip_region_view.cc
+--- a/chrome/browser/ui/views/frame/vertical_tab_strip_region_view.cc
++++ b/chrome/browser/ui/views/frame/vertical_tab_strip_region_view.cc
+@@ -51,6 +51,7 @@
+ #include "chrome/browser/ui/views/tabs/common/tab_view.h"
+ #include "chrome/browser/ui/views/tabs/common/unpinned_tab_container_view.h"
+ #include "chrome/browser/ui/views/tabs/shared/drop_arrow.h"
++#include "chrome/browser/ui/views/tabs/vertical/vertical_new_tab_button.h"
+ #include "chrome/browser/ui/views/tabs/vertical/vertical_tab_strip_bottom_container.h"
+ #include "chrome/browser/ui/web_applications/app_browser_controller.h"
+ #include "chrome/grit/generated_resources.h"
+@@ -738,6 +739,8 @@ views::View* VerticalTabStripRegionView::SetTabStripView(
+   CHECK(views::IsViewClass<TabStripView>(view.get()));
+
+   tab_strip_view_ = static_cast<TabStripView*>(AddChildView(std::move(view)));
++  tab_strip_view_->SetNewTabButton(
++      bottom_button_container_->TakeNewTabButton());
+   tab_strip_view_->SetZeniumSpaceController(space_controller_.get());
+   tab_strip_view_->SetProperty(
+       views::kFlexBehaviorKey,
