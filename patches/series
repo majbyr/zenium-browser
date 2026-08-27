@@ -352,6 +352,7 @@ zenium/ui/layout/sidebar-omnibox-lifecycle.patch
 zenium/ui/layout/sidebar-omnibox-focus-and-clipboard.patch
 zenium/ui/layout/sidebar-omnibox-zen-parity.patch
 zenium/ui/layout/sidebar-omnibox-mode-transition.patch
+zenium/ui/layout/sidebar-new-tab-clear-suggestions.patch
 
 zenium/ui/generate-standard-qr-codes.patch
 zenium/ui/pdf-viewer.patch

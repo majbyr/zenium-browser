@@ -1,0 +1,47 @@
+diff --git a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts
+--- a/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts
++++ b/chrome/browser/resources/omnibox_popup/omnibox_popup_searchbox.ts
+@@ -141,5 +141,9 @@ export class OmniboxPopupSearchboxElement extends
+   // deleted characters), as opposed to displaying permanent text set from C++.
+   private userInputInProgress_: boolean = false;
++  // Last non-empty zero-prefix result. Restoring it synchronously when the
++  // user clears a query prevents the retained popup from collapsing while a
++  // fresh provider request is in flight.
++  private zeroPrefixResult_: AutocompleteResult|null = null;
+   // True during an active IME (Input Method Editor) text composition session.
+   // Used to suppress intermediate selection updates until composition finishes.
+   private isComposing_: boolean = false;
+@@ -305,5 +309,12 @@ export class OmniboxPopupSearchboxElement extends
+     // it out so asynchronous providers cannot change the surface silhouette.
+     result.matches = result.matches.slice(0, 5);
++    if (!this.isAutocompleteResultStale(result) &&
++        this.lastQueriedInput === '' && result.matches.length) {
++      this.zeroPrefixResult_ = {
++        ...result,
++        matches: [...result.matches],
++      };
++    }
+     await super.onAutocompleteResultChanged(result);
+   }
+ 
+@@ -611,6 +622,20 @@ export class OmniboxPopupSearchboxElement extends
+       // tab switch (restoring the permanent URL instead of a blank string).
+       this.clearAutocompleteMatches();
+       this.popupPageHandler_.onInputCleared(this.currentSequenceNum_);
++      // Clearing is another empty New Tab state, not the end of the palette
++      // session. Restart zero-prefix autocomplete immediately so the initial
++      // suggestions and the centered palette geometry are restored. Both the
++      // stop in `clearAutocompleteMatches()` and this query use the same Mojo
++      // remote, which guarantees that the new query runs after the stop.
++      this.queryAutocomplete('');
++      if (this.zeroPrefixResult_) {
++        // Rebind the cached rows to the new query so SearchboxMixin accepts
++        // them as current. A fresh provider result will replace this snapshot.
++        void this.onAutocompleteResultChanged({
++          ...this.zeroPrefixResult_,
++          queryId: this.activeQueryId,
++        });
++      }
+     } else {
+       this.onSearchboxInputTextUpdated(e, /*forceAutocomplete=*/ false);
+     }
